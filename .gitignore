@@ -4,6 +4,9 @@
 *.pyc
 *.swp
 .DS_Store
+.DStore
+.AppleDouble
+.LSOverride
 .atom/
 .build/
 .buildlog/
@@ -11,6 +14,12 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+
+# Environment variables and secrets
+.env
+.env.*
+!.env.example
+!.env.*.example
 
 # IntelliJ related
 *.iml
@@ -40,6 +49,7 @@ app.*.symbols
 app.*.map.json
 
 # Android Studio will place build artifacts here
+/android/build/
 /android/app/debug
 /android/app/profile
 /android/app/release
