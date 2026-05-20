@@ -70,6 +70,8 @@ dart run tool/check.dart
 - les changements passent par Pull Request.
 - au moins une autre personne relit la Pull Request avant merge.
 
+Le processus Git complet est décrit dans [`CONTRIBUTING.md`](CONTRIBUTING.md).
+
 Avant de demander une review :
 
 ```bash
