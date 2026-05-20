@@ -17,10 +17,10 @@ Future<void> main(List<String> arguments) async {
     await _run('dart', ['format', '--set-exit-if-changed', ...pathsToFormat]);
   }
 
-  await _run('flutter', ['analyze']);
+  await _run('flutter', ['analyze', '--no-pub']);
 
   if (!quick) {
-    await _run('flutter', ['test']);
+    await _run('flutter', ['test', '--no-pub']);
     await _run('dart', ['run', 'dependency_validator']);
   }
 }
