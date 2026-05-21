@@ -45,6 +45,44 @@ class LoginScreen extends StatelessWidget {
                   child: const Text('Connexion'),
                 ),
               ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.pressed)) {
+                        return Colors.blue.shade900; // couleur au clic
+                      }
+                      return Colors.blue; // couleur normale
+                    }),
+                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                  ),
+                  onPressed: () {},
+                  child: const Text('Mot de passe oublié'),
+                ),
+              ),
+              const SizedBox(height: 16),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.pressed)) {
+                        return Colors.blue.shade900; // couleur au clic
+                      }
+                      return Colors.blue; // couleur normale
+                    }),
+                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                  ),
+                  onPressed: () {},
+                  child: const Text('Créer un compte'),
+                ),
+              ),
             ],
           ),
         ),
