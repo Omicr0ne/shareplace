@@ -30,6 +30,17 @@ class LoginScreen extends StatelessWidget {
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.resolveWith<Color>((
+                      states,
+                    ) {
+                      if (states.contains(WidgetState.pressed)) {
+                        return Colors.blue.shade900; // couleur au clic
+                      }
+                      return Colors.blue; // couleur normale
+                    }),
+                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                  ),
                   onPressed: () {},
                   child: const Text('Connexion'),
                 ),
