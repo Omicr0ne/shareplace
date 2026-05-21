@@ -55,7 +55,7 @@ class WelcomePage extends StatelessWidget {
                     const SizedBox(height: 12),
                     // Phrase de slogan.
                     Text(
-                      "Slogan à définir",
+                      'Slogan à définir',
                       textAlign: TextAlign.center,
                       style: theme.textTheme.titleMedium?.copyWith(
                         color: const Color(0xFF5D4037),
