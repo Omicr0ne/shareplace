@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shareplace/core/pages/inscription.dart';
+import 'package:shareplace/core/pages/connexion.dart';
 
 void main() {
   runApp(const MainApp());
@@ -12,7 +12,7 @@ class MainApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      home: InscriptionScreen(),
+      home: LoginScreen(),
     );
   }
 }
