@@ -1,7 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shareplace/core/pages/add_product.dart';
-import 'package:shareplace/core/pages/home_page.dart';
-import 'package:shareplace/core/pages/welcome_page.dart';
+import 'package:shareplace/core/pages/inscription2.dart';
 
 void main() {
   runApp(const MainApp());
@@ -12,14 +10,9 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return const MaterialApp(
       debugShowCheckedModeBanner: false,
-      initialRoute: '/welcome',
-      routes: {
-        '/welcome': (context) => const WelcomePage(),
-        '/home': (context) => const HomePage(),
-        '/add-product': (context) => const AddProductPage(),
-      },
+      home: InscriptionScreenK(),
     );
   }
 }
