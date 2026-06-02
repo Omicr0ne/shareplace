@@ -1,5 +1,6 @@
 class ProductItem {
 	const ProductItem({
+		required this.id,
 		required this.article,
 		required this.vendeur,
 		required this.description,
@@ -7,6 +8,7 @@ class ProductItem {
 		required this.tags,
 	});
 
+	final int id;
 	final String article;
 	final String vendeur;
 	final String description;
@@ -15,8 +17,11 @@ class ProductItem {
 }
 
 class ProductsData {
+	static final Map<int, bool> _interestByProductId = {};
+
 	static final List<ProductItem> _products = [
 		const ProductItem(
+			id: 1,
 			article: 'Canape vintage',
 			vendeur: 'Steve',
 			description: 'Canape confortable en bon etat.',
@@ -24,6 +29,7 @@ class ProductsData {
 			tags: ['Maison', 'Deco'],
 		),
 		const ProductItem(
+			id: 2,
 			article: 'Lampe design',
 			vendeur: 'Alice',
 			description: 'Lampe de chevet style scandinave.',
@@ -31,6 +37,7 @@ class ProductsData {
 			tags: ['Deco'],
 		),
 		const ProductItem(
+			id: 3,
 			article: 'Table basse',
 			vendeur: 'Bob',
 			description: 'Table basse bois clair.',
@@ -38,6 +45,7 @@ class ProductsData {
 			tags: ['Maison'],
 		),
 		const ProductItem(
+			id: 4,
 			article: 'Chaise pliable',
 			vendeur: 'David',
 			description: 'Chaise pratique pour petit espace.',
@@ -45,6 +53,7 @@ class ProductsData {
 			tags: ['Maison', 'Jardin'],
 		),
 		const ProductItem(
+			id: 5,
 			article: 'Miroir mural',
 			vendeur: 'Eve',
 			description: 'Miroir decoratif format vertical.',
@@ -53,7 +62,24 @@ class ProductsData {
 		),
 	];
 
+	static int _nextId = _products.length + 1;
+
 	static List<ProductItem> get products => List.unmodifiable(_products);
+
+	static bool isInterested(int productId) {
+		return _interestByProductId[productId] ?? false;
+	}
+
+	static bool toggleInterest(int productId) {
+		final newValue = !isInterested(productId);
+		_interestByProductId[productId] = newValue;
+		return newValue;
+	}
+
+	static void removeProduct(int productId) {
+		_products.removeWhere((product) => product.id == productId);
+		_interestByProductId.remove(productId);
+	}
 
 	static void addProduct({
 		required String article,
@@ -62,15 +88,18 @@ class ProductsData {
 		required String ville,
 		required List<String> tags,
 	}) {
+		final product = ProductItem(
+			id: _nextId++,
+			article: article,
+			vendeur: vendeur,
+			description: description,
+			ville: ville,
+			tags: List.unmodifiable(tags),
+		);
+
 		_products.insert(
 			0,
-			ProductItem(
-				article: article,
-				vendeur: vendeur,
-				description: description,
-				ville: ville,
-				tags: List.unmodifiable(tags),
-			),
+			product,
 		);
 	}
 }
