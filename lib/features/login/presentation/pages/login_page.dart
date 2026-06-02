@@ -8,6 +8,8 @@ class LoginPage extends StatefulWidget {
   const LoginPage({
     AuthService? authService,
     super.key,
+    // Keep the public `authService` parameter name for test injection.
+    // ignore: prefer_initializing_formals
   }) : _authService = authService;
 
   final AuthService? _authService;
@@ -137,7 +139,7 @@ class _LoginPageState extends State<LoginPage> {
                   ),
                   onPressed: () => Navigator.pushNamed(
                     context,
-                    AppRoutes.registration,
+                    AppRoutes.register,
                   ),
                   child: const Text('Créer un compte'),
                 ),

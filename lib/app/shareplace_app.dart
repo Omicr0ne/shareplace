@@ -9,7 +9,7 @@ import 'package:shareplace/features/notifications/presentation/pages/notificatio
 import 'package:shareplace/features/product/presentation/pages/add_product_page.dart';
 import 'package:shareplace/features/profile/presentation/pages/account_verification_page.dart';
 import 'package:shareplace/features/profile/presentation/pages/profile_page.dart';
-import 'package:shareplace/features/registration/presentation/pages/registration_page.dart';
+import 'package:shareplace/features/register/presentation/pages/registration_page.dart';
 import 'package:shareplace/features/report/presentation/pages/report_page.dart';
 import 'package:shareplace/features/search/presentation/pages/search_with_filter_page.dart';
 import 'package:shareplace/features/welcome/presentation/pages/welcome_page.dart';
@@ -37,7 +37,7 @@ class SharePlaceApp extends StatelessWidget {
         AppRoutes.profile: (_) => const ProfilePage(),
         AppRoutes.myDeals: (_) => const MyDealsPage(),
         AppRoutes.login: (_) => const LoginPage(),
-        AppRoutes.registration: (_) => const RegistrationPage(),
+        AppRoutes.register: (_) => const RegistrationPage(),
         AppRoutes.addProduct: (_) => const AddProductPage(),
         AppRoutes.forgotPassword: (_) => const ForgotPasswordPage(),
         AppRoutes.profileVerification: (_) => const AccountVerificationPage(),

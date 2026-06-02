@@ -16,6 +16,7 @@ void main() {
     expect(AppRoutes.home, '/home');
     expect(AppRoutes.profile, '/profile');
     expect(AppRoutes.login, '/login');
+    expect(AppRoutes.register, '/register');
     expect(AppRoutes.profileVerification, '/profile-verification');
     expect(AppRoutes.myDeals, '/my-deals');
     expect(AppRoutes.addProduct, '/add-product');

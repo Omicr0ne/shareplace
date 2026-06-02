@@ -2,8 +2,9 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/features/auth/data/auth_error_messages.dart';
 import 'package:shareplace/features/auth/data/auth_service.dart';
-import 'package:shareplace/features/registration/presentation/pages/registration_2_page.dart';
+import 'package:shareplace/features/register/presentation/pages/registration_2_page.dart';
 
 class RegistrationPage extends StatefulWidget {
   const RegistrationPage({super.key});
@@ -107,7 +108,9 @@ class _RegistrationPageState extends State<RegistrationPage> {
         return;
       }
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Inscription impossible : $error')),
+        SnackBar(
+          content: Text('Inscription impossible : ${authErrorMessage(error)}'),
+        ),
       );
       return;
     }

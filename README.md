@@ -16,6 +16,15 @@ Après avoir cloné le projet :
 flutter pub get
 ```
 
+Créer ensuite un fichier `.env` à la racine du projet à partir de `.env.example` :
+
+```env
+SUPABASE_URL=https://votre-projet.supabase.co
+SUPABASE_ANON_KEY=votre-cle-anon
+```
+
+L'application charge ce fichier au démarrage avec `flutter_dotenv` pour initialiser Supabase.
+
 Pour vérifier que l'environnement Flutter est correct :
 
 ```bash
