@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shareplace/app/app_routes.dart';
 import 'package:shareplace/core/models/user_profile.dart';
 import 'package:shareplace/core/widgets/app_header.dart';
+import 'package:shareplace/features/auth/data/auth_service.dart';
 import 'package:shareplace/features/profile/presentation/widgets/profile_avatar.dart';
 import 'package:shareplace/features/profile/presentation/widgets/profile_description_field.dart';
 import 'package:shareplace/features/profile/presentation/widgets/profile_identity_fields.dart';
@@ -38,6 +39,7 @@ class _ProfilePageState extends State<ProfilePage> {
             'Décris ton profil pour aider les autres à mieux te connaître.',
       );
   Uint8List? _selectedImageBytes;
+  final _authService = AuthService();
 
   @override
   Widget build(BuildContext context) {
@@ -165,7 +167,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               onPressed: () {
                 Navigator.of(context).pop();
-                _goSignIn();
+                unawaited(_signOut());
               },
               child: const Text('Confirmer'),
             ),
@@ -175,7 +177,11 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _goSignIn() {
+  Future<void> _signOut() async {
+    await _authService.signOut();
+    if (!mounted) {
+      return;
+    }
     unawaited(
       Navigator.of(
         context,

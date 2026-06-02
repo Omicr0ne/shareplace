@@ -1,6 +1,8 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/features/auth/data/auth_service.dart';
 import 'package:shareplace/features/registration/presentation/pages/registration_2_page.dart';
 
 class RegistrationPage extends StatefulWidget {
@@ -12,6 +14,7 @@ class RegistrationPage extends StatefulWidget {
 
 class _RegistrationPageState extends State<RegistrationPage> {
   final _formKey = GlobalKey<FormState>();
+  final _authService = AuthService();
   final _nomController = TextEditingController();
   final _prenomController = TextEditingController();
   final _telephoneController = TextEditingController();
@@ -88,11 +91,31 @@ class _RegistrationPageState extends State<RegistrationPage> {
     return null;
   }
 
-  void _goToStepTwo() {
+  Future<void> _goToStepTwo() async {
     final isValid = _formKey.currentState?.validate() ?? false;
     if (!isValid) {
       return;
     }
+
+    try {
+      await _authService.signUpWithEmailPassword(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Inscription impossible : $error')),
+      );
+      return;
+    }
+
+    if (!mounted) {
+      return;
+    }
+
     unawaited(
       Navigator.of(context).push(
         MaterialPageRoute<void>(
@@ -194,7 +217,7 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: buttonStyle,
-                        onPressed: _goToStepTwo,
+                        onPressed: () => unawaited(_goToStepTwo()),
                         child: const Text('Continuer'),
                       ),
                     ),
@@ -203,7 +226,10 @@ class _RegistrationPageState extends State<RegistrationPage> {
                       width: double.infinity,
                       child: ElevatedButton(
                         style: buttonStyle,
-                        onPressed: () {},
+                        onPressed: () => Navigator.pushNamed(
+                          context,
+                          AppRoutes.login,
+                        ),
                         child: const Text('Je possède déjà un compte'),
                       ),
                     ),

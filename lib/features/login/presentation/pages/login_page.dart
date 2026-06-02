@@ -1,8 +1,57 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/features/auth/data/auth_service.dart';
 
-class LoginPage extends StatelessWidget {
-  const LoginPage({super.key});
+class LoginPage extends StatefulWidget {
+  const LoginPage({
+    AuthService? authService,
+    super.key,
+  }) : _authService = authService;
+
+  final AuthService? _authService;
+
+  @override
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  late final AuthService _authService = widget._authService ?? AuthService();
+  final _emailController = TextEditingController();
+  final _passwordController = TextEditingController();
+
+  @override
+  void dispose() {
+    _emailController.dispose();
+    _passwordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _login() async {
+    try {
+      await _authService.signInWithEmailPassword(
+        _emailController.text.trim(),
+        _passwordController.text,
+      );
+      if (!mounted) {
+        return;
+      }
+      unawaited(
+        Navigator.of(context).pushNamedAndRemoveUntil(
+          AppRoutes.home,
+          (_) => false,
+        ),
+      );
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Connexion impossible : $error')),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -13,16 +62,19 @@ class LoginPage extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              const TextField(
-                decoration: InputDecoration(
+              TextField(
+                controller: _emailController,
+                keyboardType: TextInputType.emailAddress,
+                decoration: const InputDecoration(
                   labelText: 'Email',
                   border: OutlineInputBorder(),
                 ),
               ),
               const SizedBox(height: 16),
-              const TextField(
+              TextField(
+                controller: _passwordController,
                 obscureText: true,
-                decoration: InputDecoration(
+                decoration: const InputDecoration(
                   labelText: 'Mot de passe',
                   border: OutlineInputBorder(),
                 ),
@@ -42,7 +94,7 @@ class LoginPage extends StatelessWidget {
                     }),
                     foregroundColor: WidgetStateProperty.all(Colors.white),
                   ),
-                  onPressed: () {},
+                  onPressed: () => unawaited(_login()),
                   child: const Text('Connexion'),
                 ),
               ),
@@ -83,7 +135,10 @@ class LoginPage extends StatelessWidget {
                     }),
                     foregroundColor: WidgetStateProperty.all(Colors.white),
                   ),
-                  onPressed: () {},
+                  onPressed: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.registration,
+                  ),
                   child: const Text('Créer un compte'),
                 ),
               ),

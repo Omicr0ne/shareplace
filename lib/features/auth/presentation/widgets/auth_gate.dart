@@ -1,31 +1,39 @@
 import 'package:flutter/material.dart';
-import 'package:shareplace/auth/pages/login_page.dart';
-import 'package:shareplace/auth/pages/profile_page.dart';
+import 'package:shareplace/features/home/presentation/pages/home_page.dart';
+import 'package:shareplace/features/login/presentation/pages/login_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthGate extends StatelessWidget {
   const AuthGate({super.key});
 
+  SupabaseClient? _clientOrNull() {
+    try {
+      return Supabase.instance.client;
+    } on Object {
+      return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
-    return StreamBuilder(
-      // Listen to auth state changes
-      stream: Supabase.instance.client.auth.onAuthStateChange,
-      // Build page
+    final client = _clientOrNull();
+    if (client == null) {
+      return const LoginPage();
+    }
+
+    return StreamBuilder<AuthState>(
+      stream: client.auth.onAuthStateChange,
       builder: (context, snapshot) {
-        // loading
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
-        // Check if there is a valid session
         final session = snapshot.hasData ? snapshot.data!.session : null;
         if (session != null) {
-          return const ProfilePage();
-        } else {
-          return const LoginPage();
+          return const HomePage();
         }
+        return const LoginPage();
       },
     );
   }
