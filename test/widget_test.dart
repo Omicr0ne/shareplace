@@ -6,7 +6,6 @@ import 'package:shareplace/core/models/user_profile.dart';
 import 'package:shareplace/features/my_deals/domain/entities/my_deal_summary.dart';
 import 'package:shareplace/features/my_deals/presentation/pages/my_deals_page.dart';
 import 'package:shareplace/features/profile/presentation/pages/profile_page.dart';
-import 'package:shareplace/main.dart';
 
 void main() {
   const longDescription =
@@ -168,7 +167,9 @@ void main() {
   });
 
   testWidgets('shows the profile page', (tester) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(
+      const MaterialApp(home: ProfilePage()),
+    );
 
     expect(find.text('Profil'), findsOneWidget);
     expect(find.byKey(const Key('app-header-back-button')), findsOneWidget);
@@ -187,7 +188,9 @@ void main() {
   testWidgets('opens profile picture actions when avatar is tapped', (
     tester,
   ) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(
+      const MaterialApp(home: ProfilePage()),
+    );
 
     await tester.tap(find.byKey(const Key('profile-avatar')));
     await tester.pumpAndSettle();
@@ -197,7 +200,9 @@ void main() {
   });
 
   testWidgets('allows editing the profile description', (tester) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(
+      const MaterialApp(home: ProfilePage()),
+    );
 
     await tester.enterText(
       find.byKey(const Key('profile-description-field')),
@@ -213,7 +218,9 @@ void main() {
   testWidgets('shows a verification CTA when profile is not verified', (
     tester,
   ) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(
+      const MaterialApp(home: ProfilePage()),
+    );
 
     expect(find.text('Vérifier mon compte'), findsOneWidget);
     expect(find.byIcon(Icons.verified_user_outlined), findsOneWidget);
@@ -264,7 +271,9 @@ void main() {
   });
 
   testWidgets('allows editing required identity fields', (tester) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(
+      const MaterialApp(home: ProfilePage()),
+    );
 
     await tester.enterText(
       find.byKey(const Key('profile-first-name-field')),
@@ -280,7 +289,9 @@ void main() {
   });
 
   testWidgets('rejects empty identity fields', (tester) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(
+      const MaterialApp(home: ProfilePage()),
+    );
 
     await tester.enterText(
       find.byKey(const Key('profile-first-name-field')),
@@ -297,7 +308,9 @@ void main() {
   });
 
   testWidgets('asks for confirmation before signing out', (tester) async {
-    await tester.pumpWidget(const MainApp());
+    await tester.pumpWidget(
+      const MaterialApp(home: ProfilePage()),
+    );
 
     await tester.scrollUntilVisible(
       find.byKey(const Key('profile-logout-button')),

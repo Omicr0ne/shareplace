@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shareplace/core/fixtures/products_data.dart';
 import 'package:shareplace/core/pages/info_product_client.dart';
@@ -87,7 +88,7 @@ class _HomePageState extends State<HomePage> {
               title: const Text('Bienvenue'),
               onTap: () {
                 Navigator.pop(context);
-                Navigator.pushReplacementNamed(context, '/welcome');
+                unawaited(Navigator.pushReplacementNamed(context, '/welcome'));
               },
             ),
             const Divider(height: 1),

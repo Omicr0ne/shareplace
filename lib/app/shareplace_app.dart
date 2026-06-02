@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/core/pages/home_page.dart';
-import 'package:shareplace/core/pages/welcome_page.dart';
+import 'package:shareplace/features/home/presentation/pages/home_page.dart';
 import 'package:shareplace/features/my_deals/presentation/pages/my_deals_page.dart';
 import 'package:shareplace/features/profile/presentation/pages/profile_page.dart';
+import 'package:shareplace/features/welcome/presentation/pages/welcome_page.dart';
 
 class SharePlaceApp extends StatelessWidget {
   const SharePlaceApp({super.key});
@@ -18,7 +18,6 @@ class SharePlaceApp extends StatelessWidget {
         ),
         useMaterial3: true,
       ),
-      home: const HomePage(),
       initialRoute: AppRoutes.welcome,
       routes: {
         AppRoutes.welcome: (_) => const WelcomePage(),
