@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class SignalementPage extends StatefulWidget {
-  const SignalementPage({super.key});
+class ReportPage extends StatefulWidget {
+  const ReportPage({super.key});
 
   @override
-  State<SignalementPage> createState() => _SignalementPageState();
+  State<ReportPage> createState() => _ReportPageState();
 }
 
-class _SignalementPageState extends State<SignalementPage> {
+class _ReportPageState extends State<ReportPage> {
   // Contrôleur pour récupérer le texte saisi par l'utilisateur
   final TextEditingController _motifController = TextEditingController();
 
