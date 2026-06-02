@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shareplace/app/app_routes.dart';
 
 class LoginPage extends StatelessWidget {
   const LoginPage({super.key});
@@ -60,7 +61,10 @@ class LoginPage extends StatelessWidget {
                     }),
                     foregroundColor: WidgetStateProperty.all(Colors.white),
                   ),
-                  onPressed: () {},
+                  onPressed: () => Navigator.pushNamed(
+                    context,
+                    AppRoutes.forgotPassword,
+                  ),
                   child: const Text('Mot de passe oublié'),
                 ),
               ),

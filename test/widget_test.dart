@@ -19,6 +19,8 @@ void main() {
     expect(AppRoutes.profileVerification, '/profile-verification');
     expect(AppRoutes.myDeals, '/my-deals');
     expect(AppRoutes.addProduct, '/add-product');
+    expect(AppRoutes.forgotPassword, '/forgot-password');
+    expect(AppRoutes.search, '/search-filter');
   });
 
   testWidgets('shows my deals placeholder list', (tester) async {

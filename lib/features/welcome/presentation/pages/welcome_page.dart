@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shareplace/app/app_routes.dart';
 
 class WelcomePage extends StatelessWidget {
   const WelcomePage({
@@ -127,7 +128,7 @@ class WelcomePage extends StatelessWidget {
   // Bouton d'accès direct à la page d'accueil (à supprimer)
   Widget _homeButton(BuildContext context) {
     return ElevatedButton(
-      onPressed: () => Navigator.pushNamed(context, '/home'),
+      onPressed: () => Navigator.pushNamed(context, AppRoutes.home),
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFEF6C00),
         foregroundColor: Colors.white,

@@ -10,4 +10,6 @@ abstract final class AppRoutes {
   static const login = '/login';
   static const registration = '/registration';
   static const addProduct = '/add-product';
+  static const forgotPassword = '/forgot-password';
+  static const search = '/search-filter';
 }

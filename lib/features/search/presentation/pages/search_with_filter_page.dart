@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 
 class SearchWithFilterPage extends StatelessWidget {
-
   const SearchWithFilterPage({super.key});
-  static const routeName = '/search-filter';
 
   @override
   Widget build(BuildContext context) {
