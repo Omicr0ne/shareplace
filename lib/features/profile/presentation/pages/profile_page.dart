@@ -179,7 +179,7 @@ class _ProfilePageState extends State<ProfilePage> {
     unawaited(
       Navigator.of(
         context,
-      ).pushNamedAndRemoveUntil(AppRoutes.signIn, (_) => false),
+      ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false),
     );
   }
 }

@@ -15,7 +15,7 @@ void main() {
   test('defines the home route contract', () {
     expect(AppRoutes.home, '/home');
     expect(AppRoutes.profile, '/profile');
-    expect(AppRoutes.signIn, '/sign-in');
+    expect(AppRoutes.login, '/login');
     expect(AppRoutes.profileVerification, '/profile-verification');
     expect(AppRoutes.myDeals, '/my-deals');
   });
@@ -331,7 +331,7 @@ void main() {
       MaterialApp(
         home: const ProfilePage(),
         routes: {
-          AppRoutes.signIn: (_) => const Scaffold(body: Text('Sign in page')),
+          AppRoutes.login: (_) => const Scaffold(body: Text('Sign in page')),
         },
       ),
     );

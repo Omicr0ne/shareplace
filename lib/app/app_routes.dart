@@ -7,5 +7,5 @@ abstract final class AppRoutes {
   static const report = '/report';
   static const profile = '/profile';
   static const profileVerification = '/profile-verification';
-  static const signIn = '/sign-in';
+  static const login = '/login';
 }
