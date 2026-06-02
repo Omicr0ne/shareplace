@@ -1,8 +1,10 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
-import 'package:shareplace/core/fixtures/products_data.dart';
-import 'package:shareplace/core/pages/info_product_client.dart';
-import 'package:shareplace/core/pages/info_product_vendeur.dart';
+import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/features/product/data/products_data.dart';
+import 'package:shareplace/features/product/domain/entities/product_item.dart';
+import 'package:shareplace/features/product/presentation/pages/product_buyer_details_page.dart';
+import 'package:shareplace/features/product/presentation/pages/product_seller_details_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,7 +17,7 @@ class _HomePageState extends State<HomePage> {
   List<ProductItem> get _products => ProductsData.products;
 
   Future<void> _openAddProductPage() async {
-    final result = await Navigator.pushNamed(context, '/add-product');
+    final result = await Navigator.pushNamed(context, AppRoutes.addProduct);
     if (result == true && mounted) {
       setState(() {});
     }
@@ -23,8 +25,8 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _openProductDetails(ProductItem product) async {
     final page = product.vendeur == 'Moi'
-        ? InfoProductVendeur(product: product)
-        : InfoProductClient(product: product);
+        ? ProductSellerDetailsPage(product: product)
+        : ProductBuyerDetailsPage(product: product);
 
     final result = await Navigator.push<bool>(
       context,
@@ -88,7 +90,9 @@ class _HomePageState extends State<HomePage> {
               title: const Text('Bienvenue'),
               onTap: () {
                 Navigator.pop(context);
-                unawaited(Navigator.pushReplacementNamed(context, '/welcome'));
+                unawaited(
+                  Navigator.pushReplacementNamed(context, AppRoutes.welcome),
+                );
               },
             ),
             const Divider(height: 1),

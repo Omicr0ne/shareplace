@@ -9,4 +9,5 @@ abstract final class AppRoutes {
   static const profileVerification = '/profile-verification';
   static const login = '/login';
   static const registration = '/registration';
+  static const addProduct = '/add-product';
 }

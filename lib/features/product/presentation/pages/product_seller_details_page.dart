@@ -1,29 +1,61 @@
 import 'package:flutter/material.dart';
-import 'package:shareplace/core/fixtures/products_data.dart';
-import 'package:shareplace/core/widgets/product_image_carousel.dart';
+import 'package:shareplace/features/product/data/products_data.dart';
+import 'package:shareplace/features/product/domain/entities/product_item.dart';
+import 'package:shareplace/features/product/presentation/widgets/product_image_carousel.dart';
 
-class InfoProductClient extends StatefulWidget {
-  const InfoProductClient({super.key, required this.product});
+class ProductSellerDetailsPage extends StatefulWidget {
+  const ProductSellerDetailsPage({required this.product, super.key});
 
   final ProductItem product;
 
   @override
-  State<InfoProductClient> createState() => _InfoProductClientState();
+  State<ProductSellerDetailsPage> createState() =>
+      _ProductSellerDetailsPageState();
 }
 
-class _InfoProductClientState extends State<InfoProductClient> {
-  bool get _isInterested => ProductsData.isInterested(widget.product.id);
+class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
+  Future<void> _deleteProduct() async {
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text("Supprimer l'annonce ?"),
+          content: const Text(
+            'Cette action est definitive pour cette maquette locale.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context, false),
+              child: const Text('Annuler'),
+            ),
+            ElevatedButton(
+              onPressed: () => Navigator.pop(context, true),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFFEF6C00),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Supprimer'),
+            ),
+          ],
+        );
+      },
+    );
 
-  Future<void> _toggleInterest() async {
-    setState(() {
-      ProductsData.toggleInterest(widget.product.id);
-    });
+    if (shouldDelete != true) {
+      return;
+    }
+
+    ProductsData.removeProduct(widget.product.id);
+    if (!mounted) {
+      return;
+    }
+
+    Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
-    final interestText = _isInterested ? 'Je ne suis plus intéressé' : 'Je suis intéressé';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EF),
@@ -51,7 +83,6 @@ class _InfoProductClientState extends State<InfoProductClient> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Align(
-                    alignment: Alignment.center,
                     child: Text(
                       product.article,
                       textAlign: TextAlign.center,
@@ -67,7 +98,11 @@ class _InfoProductClientState extends State<InfoProductClient> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 18, color: Color(0xFFEF6C00)),
+                      const Icon(
+                        Icons.location_on,
+                        size: 18,
+                        color: Color(0xFFEF6C00),
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -90,22 +125,28 @@ class _InfoProductClientState extends State<InfoProductClient> {
                           (tag) => Chip(
                             label: Text(tag),
                             backgroundColor: const Color(0xFFFFF3E0),
-                            labelStyle: const TextStyle(color: Color(0xFF3E2723)),
+                            labelStyle: const TextStyle(
+                              color: Color(0xFF3E2723),
+                            ),
                           ),
                         )
                         .toList(),
                   ),
                   const SizedBox(height: 16),
-                  Row(
+                  const Row(
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 18,
                         backgroundColor: Color(0xFFEF6C00),
-                        child: Icon(Icons.person, color: Colors.white, size: 20),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Annonce du vendeur',
+                      SizedBox(width: 10),
+                      Text(
+                        'Vous publiez cette annonce',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -128,25 +169,16 @@ class _InfoProductClientState extends State<InfoProductClient> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: _toggleInterest,
+                      onPressed: _deleteProduct,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: _isInterested ? const Color(0xFFFFB74D) : const Color(0xFFEF6C00),
+                        backgroundColor: const Color(0xFFEF6C00),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                         elevation: 3,
                       ),
-                      child: Text(interestText),
-                    ),
-                  ),
-                  const SizedBox(height: 10),
-                  const Text(
-                    'Vous pouvez changer d\'avis à tout moment.',
-                    textAlign: TextAlign.center,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: Color(0xFF8D6E63),
+                      child: const Text("Supprimer l'annonce"),
                     ),
                   ),
                 ],

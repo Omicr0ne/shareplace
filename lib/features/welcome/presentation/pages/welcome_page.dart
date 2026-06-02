@@ -72,15 +72,16 @@ class WelcomePage extends StatelessWidget {
                       ],
                     ),
 
-						// Espace avant le bouton 'Accueil' pour séparation visuelle
-						const SizedBox(height: 16),
+                    // Espace avant le bouton 'Accueil' pour séparation visuelle
+                    const SizedBox(height: 16),
 
-						// Bouton de test pour accéder à la page d'accueil (à supprimer)
-						Row(
-							children: [
-								Expanded(child: _homeButton(context)),
-							],
-						),
+                    // Bouton de test pour accéder à la page d'accueil.
+                    // À supprimer quand la navigation finale sera prête.
+                    Row(
+                      children: [
+                        Expanded(child: _homeButton(context)),
+                      ],
+                    ),
                   ],
                 ),
               ),

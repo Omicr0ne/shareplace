@@ -1,57 +1,33 @@
 import 'package:flutter/material.dart';
-import 'package:shareplace/core/fixtures/products_data.dart';
-import 'package:shareplace/core/widgets/product_image_carousel.dart';
+import 'package:shareplace/features/product/data/products_data.dart';
+import 'package:shareplace/features/product/domain/entities/product_item.dart';
+import 'package:shareplace/features/product/presentation/widgets/product_image_carousel.dart';
 
-class InfoProductVendeur extends StatefulWidget {
-  const InfoProductVendeur({super.key, required this.product});
+class ProductBuyerDetailsPage extends StatefulWidget {
+  const ProductBuyerDetailsPage({required this.product, super.key});
 
   final ProductItem product;
 
   @override
-  State<InfoProductVendeur> createState() => _InfoProductVendeurState();
+  State<ProductBuyerDetailsPage> createState() =>
+      _ProductBuyerDetailsPageState();
 }
 
-class _InfoProductVendeurState extends State<InfoProductVendeur> {
-  Future<void> _deleteProduct() async {
-    final shouldDelete = await showDialog<bool>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Supprimer l\'annonce ?'),
-          content: const Text('Cette action est definitive pour cette maquette locale.'),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(context, false),
-              child: const Text('Annuler'),
-            ),
-            ElevatedButton(
-              onPressed: () => Navigator.pop(context, true),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFEF6C00),
-                foregroundColor: Colors.white,
-              ),
-              child: const Text('Supprimer'),
-            ),
-          ],
-        );
-      },
-    );
+class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
+  bool get _isInterested => ProductsData.isInterested(widget.product.id);
 
-    if (shouldDelete != true) {
-      return;
-    }
-
-    ProductsData.removeProduct(widget.product.id);
-    if (!mounted) {
-      return;
-    }
-
-    Navigator.pop(context, true);
+  Future<void> _toggleInterest() async {
+    setState(() {
+      ProductsData.toggleInterest(widget.product.id);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
     final product = widget.product;
+    final interestText = _isInterested
+        ? 'Je ne suis plus intéressé'
+        : 'Je suis intéressé';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EF),
@@ -79,7 +55,6 @@ class _InfoProductVendeurState extends State<InfoProductVendeur> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Align(
-                    alignment: Alignment.center,
                     child: Text(
                       product.article,
                       textAlign: TextAlign.center,
@@ -95,7 +70,11 @@ class _InfoProductVendeurState extends State<InfoProductVendeur> {
                   const SizedBox(height: 16),
                   Row(
                     children: [
-                      const Icon(Icons.location_on, size: 18, color: Color(0xFFEF6C00)),
+                      const Icon(
+                        Icons.location_on,
+                        size: 18,
+                        color: Color(0xFFEF6C00),
+                      ),
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
@@ -118,22 +97,28 @@ class _InfoProductVendeurState extends State<InfoProductVendeur> {
                           (tag) => Chip(
                             label: Text(tag),
                             backgroundColor: const Color(0xFFFFF3E0),
-                            labelStyle: const TextStyle(color: Color(0xFF3E2723)),
+                            labelStyle: const TextStyle(
+                              color: Color(0xFF3E2723),
+                            ),
                           ),
                         )
                         .toList(),
                   ),
                   const SizedBox(height: 16),
-                  Row(
+                  const Row(
                     children: [
-                      const CircleAvatar(
+                      CircleAvatar(
                         radius: 18,
                         backgroundColor: Color(0xFFEF6C00),
-                        child: Icon(Icons.person, color: Colors.white, size: 20),
+                        child: Icon(
+                          Icons.person,
+                          color: Colors.white,
+                          size: 20,
+                        ),
                       ),
-                      const SizedBox(width: 10),
-                      const Text(
-                        'Vous publiez cette annonce',
+                      SizedBox(width: 10),
+                      Text(
+                        'Annonce du vendeur',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w700,
@@ -156,16 +141,27 @@ class _InfoProductVendeurState extends State<InfoProductVendeur> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: _deleteProduct,
+                      onPressed: _toggleInterest,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFEF6C00),
+                        backgroundColor: _isInterested
+                            ? const Color(0xFFFFB74D)
+                            : const Color(0xFFEF6C00),
                         foregroundColor: Colors.white,
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(14),
                         ),
                         elevation: 3,
                       ),
-                      child: const Text('Supprimer l\'annonce'),
+                      child: Text(interestText),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const Text(
+                    "Vous pouvez changer d'avis à tout moment.",
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF8D6E63),
                     ),
                   ),
                 ],

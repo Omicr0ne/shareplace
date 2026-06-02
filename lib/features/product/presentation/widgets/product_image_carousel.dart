@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 
 class ProductImageCarousel extends StatefulWidget {
-  const ProductImageCarousel({super.key, required this.productTitle});
+  const ProductImageCarousel({required this.productTitle, super.key});
 
   final String productTitle;
 
@@ -98,7 +98,9 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
               width: selected ? 20 : 8,
               height: 8,
               decoration: BoxDecoration(
-                color: selected ? const Color(0xFFEF6C00) : const Color(0xFFFFCC80),
+                color: selected
+                    ? const Color(0xFFEF6C00)
+                    : const Color(0xFFFFCC80),
                 borderRadius: BorderRadius.circular(999),
               ),
             );
