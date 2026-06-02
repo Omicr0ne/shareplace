@@ -93,7 +93,8 @@ class _GalleryImportPageState extends State<GalleryImportPage> {
                     ),
                     const SizedBox(height: 12),
                     const Text(
-                      'Selectionnez une ou plusieurs images depuis votre galerie.',
+                      'Selectionnez une ou plusieurs images depuis votre '
+                      'galerie.',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Color(0xFF9F9F9F),
@@ -129,50 +130,50 @@ class _GalleryImportPageState extends State<GalleryImportPage> {
                       ),
                     ),
                     const SizedBox(height: 18),
-                    _images.isEmpty
-                        ? Container(
-                            padding: const EdgeInsets.symmetric(vertical: 28),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFF242424),
-                              borderRadius: BorderRadius.circular(16),
+                    if (_images.isEmpty)
+                      Container(
+                        padding: const EdgeInsets.symmetric(vertical: 28),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF242424),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: const Column(
+                          children: [
+                            Icon(
+                              Icons.collections_outlined,
+                              color: Color(0xFFFFA500),
+                              size: 30,
                             ),
-                            child: const Column(
-                              children: [
-                                Icon(
-                                  Icons.collections_outlined,
-                                  color: Color(0xFFFFA500),
-                                  size: 30,
-                                ),
-                                SizedBox(height: 8),
-                                Text(
-                                  'Aucune image importee',
-                                  style: TextStyle(color: Color(0xFFBDBDBD)),
-                                ),
-                              ],
+                            SizedBox(height: 8),
+                            Text(
+                              'Aucune image importee',
+                              style: TextStyle(color: Color(0xFFBDBDBD)),
                             ),
-                          )
-                        : SizedBox(
-                            height: 280,
-                            child: GridView.builder(
-                              itemCount: _images.length,
-                              gridDelegate:
-                                  const SliverGridDelegateWithFixedCrossAxisCount(
-                                    crossAxisCount: 3,
-                                    crossAxisSpacing: 10,
-                                    mainAxisSpacing: 10,
-                                    childAspectRatio: 1,
-                                  ),
-                              itemBuilder: (context, index) {
-                                return ClipRRect(
-                                  borderRadius: BorderRadius.circular(14),
-                                  child: Image.memory(
-                                    _images[index],
-                                    fit: BoxFit.cover,
-                                  ),
-                                );
-                              },
-                            ),
-                          ),
+                          ],
+                        ),
+                      )
+                    else
+                      SizedBox(
+                        height: 280,
+                        child: GridView.builder(
+                          itemCount: _images.length,
+                          gridDelegate:
+                              const SliverGridDelegateWithFixedCrossAxisCount(
+                                crossAxisCount: 3,
+                                crossAxisSpacing: 10,
+                                mainAxisSpacing: 10,
+                              ),
+                          itemBuilder: (context, index) {
+                            return ClipRRect(
+                              borderRadius: BorderRadius.circular(14),
+                              child: Image.memory(
+                                _images[index],
+                                fit: BoxFit.cover,
+                              ),
+                            );
+                          },
+                        ),
+                      ),
                   ],
                 ),
               ),
