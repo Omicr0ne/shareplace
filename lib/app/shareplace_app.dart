@@ -3,6 +3,7 @@ import 'package:shareplace/app/app_routes.dart';
 import 'package:shareplace/features/home/presentation/pages/home_page.dart';
 import 'package:shareplace/features/legal_notices/presentation/pages/legal_notices.dart';
 import 'package:shareplace/features/my_deals/presentation/pages/my_deals_page.dart';
+import 'package:shareplace/features/notifications/presentation/pages/notifications_page.dart';
 import 'package:shareplace/features/profile/presentation/pages/profile_page.dart';
 import 'package:shareplace/features/welcome/presentation/pages/welcome_page.dart';
 
@@ -24,6 +25,7 @@ class SharePlaceApp extends StatelessWidget {
         AppRoutes.welcome: (_) => const WelcomePage(),
         AppRoutes.home: (_) => const HomePage(),
         AppRoutes.legalNotices: (_) => const LegalNoticesPage(),
+        AppRoutes.notifications: (_) => const NotificationsPage(),
         AppRoutes.profile: (_) => const ProfilePage(),
         AppRoutes.myDeals: (_) => const MyDealsPage(),
       },
