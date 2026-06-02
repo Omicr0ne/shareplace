@@ -1,30 +1,22 @@
 import 'package:flutter/material.dart';
+import 'package:shareplace/core/fixtures/products_data.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
-  static const List<_ProductItem> _products = [
-    _ProductItem(
-      article: 'Canapé vintage',
-      vendeur: 'Steve',
-    ),
-    _ProductItem(
-      article: 'Lampe design',
-      vendeur: 'Alice',
-    ),
-    _ProductItem(
-      article: 'Table basse',
-      vendeur: 'Bob',
-    ),
-    _ProductItem(
-      article: 'Chaise pliable',
-      vendeur: 'David',
-    ),
-    _ProductItem(
-      article: 'Miroir mural',
-      vendeur: 'Eve',
-    ),
-  ];
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  List<ProductItem> get _products => ProductsData.products;
+
+  Future<void> _openAddProductPage() async {
+    final result = await Navigator.pushNamed(context, '/add-product');
+    if (result == true && mounted) {
+      setState(() {});
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -91,9 +83,9 @@ class HomePage extends StatelessWidget {
             ListTile(
               leading: const Icon(Icons.add_box_outlined),
               title: const Text('Ajouter un produit'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                _showComingSoon(context);
+                await _openAddProductPage();
               },
             ),
           ],
@@ -101,13 +93,13 @@ class HomePage extends StatelessWidget {
       ),
       appBar: AppBar(
         title: const Text('SharePlace'),
-        actions: [
-          IconButton(
-            onPressed: () => _showComingSoon(context),
+        leading: Builder(
+          builder: (context) => IconButton(
+            onPressed: () => Scaffold.of(context).openDrawer(),
             icon: const Icon(Icons.person_outline),
-            tooltip: 'Profil',
+            tooltip: 'Menu profil',
           ),
-        ],
+        ),
       ),
       body: SafeArea(
         child: Column(
@@ -149,7 +141,7 @@ class HomePage extends StatelessWidget {
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: () => _showComingSoon(context),
+        onPressed: _openAddProductPage,
         backgroundColor: const Color(0xFFEF6C00),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
@@ -169,7 +161,7 @@ class HomePage extends StatelessWidget {
 class _ProductCard extends StatelessWidget {
   const _ProductCard({required this.product});
 
-  final _ProductItem product;
+  final ProductItem product;
 
   @override
   Widget build(BuildContext context) {
@@ -226,14 +218,4 @@ class _ProductCard extends StatelessWidget {
       ),
     );
   }
-}
-
-class _ProductItem {
-  const _ProductItem({
-    required this.article,
-    required this.vendeur,
-  });
-
-  final String article;
-  final String vendeur;
 }
