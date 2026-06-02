@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shareplace/core/fixtures/products_data.dart';
+import 'package:shareplace/core/pages/info_product_client.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -13,6 +14,22 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _openAddProductPage() async {
     final result = await Navigator.pushNamed(context, '/add-product');
+    if (result == true && mounted) {
+      setState(() {});
+    }
+  }
+
+  Future<void> _openProductDetails(ProductItem product) async {
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (context) => InfoProductClient(
+          product: product,
+          isOwner: product.vendeur == 'Moi',
+        ),
+      ),
+    );
+
     if (result == true && mounted) {
       setState(() {});
     }
@@ -133,7 +150,10 @@ class _HomePageState extends State<HomePage> {
                 itemCount: _products.length,
                 itemBuilder: (context, index) {
                   final product = _products[index];
-                  return _ProductCard(product: product);
+                  return _ProductCard(
+                    product: product,
+                    onTap: () => _openProductDetails(product),
+                  );
                 },
               ),
             ),
@@ -159,9 +179,13 @@ class _HomePageState extends State<HomePage> {
 }
 
 class _ProductCard extends StatelessWidget {
-  const _ProductCard({required this.product});
+  const _ProductCard({
+    required this.product,
+    required this.onTap,
+  });
 
   final ProductItem product;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -169,52 +193,55 @@ class _ProductCard extends StatelessWidget {
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
       clipBehavior: Clip.antiAlias,
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Expanded(
-            child: Container(
-              width: double.infinity,
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFFFE0B2), Color(0xFFFFCC80)],
+      child: InkWell(
+        onTap: onTap,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: Container(
+                width: double.infinity,
+                decoration: const BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [Color(0xFFFFE0B2), Color(0xFFFFCC80)],
+                  ),
                 ),
-              ),
-              child: const Center(
-                child: Icon(
-                  Icons.inventory_2_outlined,
-                  size: 44,
-                  color: Color(0xFF8D6E63),
+                child: const Center(
+                  child: Icon(
+                    Icons.inventory_2_outlined,
+                    size: 44,
+                    color: Color(0xFF8D6E63),
+                  ),
                 ),
               ),
             ),
-          ),
-          Padding(
-            padding: const EdgeInsets.all(12),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  product.article,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
+            Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    product.article,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
-                ),
-                const SizedBox(height: 4),
-                Text(
-                  product.vendeur,
-                  style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                    color: Colors.grey.shade700,
+                  const SizedBox(height: 4),
+                  Text(
+                    product.vendeur,
+                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                      color: Colors.grey.shade700,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
