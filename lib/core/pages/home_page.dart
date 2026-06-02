@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shareplace/core/fixtures/products_data.dart';
 import 'package:shareplace/core/pages/info_product_client.dart';
+import 'package:shareplace/core/pages/info_product_vendeur.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -20,13 +21,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openProductDetails(ProductItem product) async {
+    final page = product.vendeur == 'Moi'
+        ? InfoProductVendeur(product: product)
+        : InfoProductClient(product: product);
+
     final result = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
-        builder: (context) => InfoProductClient(
-          product: product,
-          isOwner: product.vendeur == 'Moi',
-        ),
+        builder: (context) => page,
       ),
     );
 
