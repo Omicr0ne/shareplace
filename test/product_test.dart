@@ -14,6 +14,7 @@ void main() {
     description: 'Canape confortable en bon etat.',
     ville: 'Lyon',
     tags: ['Maison', 'Deco'],
+    images: [],
   );
 
   testWidgets('product detail pages expose share buttons', (tester) async {
