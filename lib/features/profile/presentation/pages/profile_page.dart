@@ -29,20 +29,31 @@ class _ProfilePageState extends State<ProfilePage> {
   static const _placeholderAvatarUrl =
       'https://api.dicebear.com/10.x/adventurer/png?seed=SharePlace';
 
-  late UserProfile _profile =
-      widget.initialProfile ??
-      const UserProfile(
-        id: 'placeholder-profile',
-        firstName: 'Share',
-        lastName: 'Place',
-        description:
-            'Décris ton profil pour aider les autres à mieux te connaître.',
-      );
+  UserProfile? _profile;
   Uint8List? _selectedImageBytes;
   final _authService = AuthService();
 
   @override
+  void initState() {
+    super.initState();
+    final initialProfile = widget.initialProfile;
+    if (initialProfile != null) {
+      _profile = initialProfile;
+      return;
+    }
+
+    unawaited(_loadCurrentProfile());
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final profile = _profile;
+    if (profile == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       body: SafeArea(
         child: Center(
@@ -59,7 +70,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 Align(
                   child: ProfileAvatar(
                     placeholderUrl: _placeholderAvatarUrl,
-                    imageUrl: _profile.profilePictureUrl,
+                    imageUrl: profile.profilePictureUrl,
                     imageBytes: _selectedImageBytes,
                     onPickImage: _pickProfilePicture,
                     onDeleteImage: _deleteProfilePicture,
@@ -67,19 +78,19 @@ class _ProfilePageState extends State<ProfilePage> {
                 ),
                 const SizedBox(height: 32),
                 ProfileVerificationButton(
-                  status: _profile.studentVerificationStatus,
+                  status: profile.studentVerificationStatus,
                   onPressed: _goProfileVerification,
                 ),
                 const SizedBox(height: 24),
                 ProfileIdentityFields(
-                  firstName: _profile.firstName,
-                  lastName: _profile.lastName,
+                  firstName: profile.firstName,
+                  lastName: profile.lastName,
                   onFirstNameChanged: _updateFirstName,
                   onLastNameChanged: _updateLastName,
                 ),
                 const SizedBox(height: 24),
                 ProfileDescriptionField(
-                  initialDescription: _profile.description,
+                  initialDescription: profile.description,
                   onChanged: _updateDescription,
                 ),
                 const SizedBox(height: 24),
@@ -90,6 +101,25 @@ class _ProfilePageState extends State<ProfilePage> {
         ),
       ),
     );
+  }
+
+  Future<void> _loadCurrentProfile() async {
+    final profile = await _authService.getCurrentUserProfile();
+    if (!mounted) {
+      return;
+    }
+    if (profile == null) {
+      unawaited(
+        Navigator.of(
+          context,
+        ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false),
+      );
+      return;
+    }
+
+    setState(() {
+      _profile = profile;
+    });
   }
 
   Future<void> _pickProfilePicture() async {
@@ -109,27 +139,27 @@ class _ProfilePageState extends State<ProfilePage> {
 
     setState(() {
       _selectedImageBytes = bytes;
-      _profile = _profile.copyWith(profilePictureUrl: null);
+      _profile = _profile?.copyWith(profilePictureUrl: null);
     });
   }
 
   void _deleteProfilePicture() {
     setState(() {
       _selectedImageBytes = null;
-      _profile = _profile.copyWith(profilePictureUrl: null);
+      _profile = _profile?.copyWith(profilePictureUrl: null);
     });
   }
 
   void _updateDescription(String description) {
-    _profile = _profile.copyWith(description: description);
+    _profile = _profile?.copyWith(description: description);
   }
 
   void _updateFirstName(String firstName) {
-    _profile = _profile.copyWith(firstName: firstName);
+    _profile = _profile?.copyWith(firstName: firstName);
   }
 
   void _updateLastName(String lastName) {
-    _profile = _profile.copyWith(lastName: lastName);
+    _profile = _profile?.copyWith(lastName: lastName);
   }
 
   void _goHome() {

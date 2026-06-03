@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shareplace/core/widgets/share_button.dart';
 import 'package:shareplace/features/product/data/products_data.dart';
 import 'package:shareplace/features/product/domain/entities/product_item.dart';
 import 'package:shareplace/features/product/presentation/widgets/product_image_carousel.dart';
@@ -14,6 +15,12 @@ class ProductSellerDetailsPage extends StatefulWidget {
 }
 
 class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
+  String _shareText(ProductItem product) {
+    return 'Découvrez cette annonce sur SharePlace : ${product.article}\n'
+        'Lieu : ${product.ville}\n\n'
+        '${product.description}';
+  }
+
   Future<void> _deleteProduct() async {
     final shouldDelete = await showDialog<bool>(
       context: context,
@@ -68,9 +75,13 @@ class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Retour',
         ),
-        actions: const [
-          Icon(Icons.share_outlined),
-          SizedBox(width: 16),
+        actions: [
+          ShareButton(
+            title: product.article,
+            subject: 'Annonce SharePlace : ${product.article}',
+            text: _shareText(product),
+          ),
+          const SizedBox(width: 8),
         ],
       ),
       body: SafeArea(
