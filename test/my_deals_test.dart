@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shareplace/core/models/deal.dart';
+import 'package:shareplace/core/models/profile.dart';
+import 'package:shareplace/core/repositories/deal_repository.dart';
+import 'package:shareplace/core/repositories/profile_repository.dart';
 import 'package:shareplace/features/my_deals/domain/entities/my_deal_summary.dart';
 import 'package:shareplace/features/my_deals/presentation/pages/my_deals_page.dart';
 
@@ -117,4 +121,84 @@ void main() {
     expect(description.maxLines, 2);
     expect(description.overflow, TextOverflow.ellipsis);
   });
+
+  testWidgets('loads seller deals from injected repositories', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MyDealsPage(
+          profileRepository: const _FakeProfileRepository(
+            profile: Profile(
+              id: 'seller-id',
+              firstName: 'Lina',
+              lastName: 'Martin',
+            ),
+          ),
+          dealRepository: _FakeDealRepository(
+            deals: [
+              Deal(
+                id: 'deal-id',
+                sellerProfileId: 'seller-id',
+                title: 'Canapé convertible',
+                description: 'Canapé deux places en bon état.',
+                postalCode: '69001',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Canapé convertible'), findsOneWidget);
+    expect(find.text('0 intéressé'), findsOneWidget);
+  });
+}
+
+class _FakeProfileRepository implements ProfileRepository {
+  const _FakeProfileRepository({this.profile});
+
+  final Profile? profile;
+
+  @override
+  Future<Profile> create(Profile profile) async => profile;
+
+  @override
+  Future<Profile?> getByAuthUserId(String authUserId) async => profile;
+
+  @override
+  Future<Profile> getById(String id) async => profile!;
+
+  @override
+  Future<Profile?> getCurrentProfile() async => profile;
+
+  @override
+  Future<Profile> update(Profile profile) async => profile;
+}
+
+class _FakeDealRepository implements DealRepository {
+  const _FakeDealRepository({required this.deals});
+
+  final List<Deal> deals;
+
+  @override
+  Future<void> cancel(String id) async {}
+
+  @override
+  Future<Deal> create(Deal deal) async => deal;
+
+  @override
+  Future<Deal> getById(String id) async => deals.first;
+
+  @override
+  Future<List<Deal>> getBySellerProfileId(String sellerProfileId) async {
+    return deals
+        .where((deal) => deal.sellerProfileId == sellerProfileId)
+        .toList(growable: false);
+  }
+
+  @override
+  Future<List<Deal>> getOpenDeals() async => deals;
+
+  @override
+  Future<Deal> update(Deal deal) async => deal;
 }

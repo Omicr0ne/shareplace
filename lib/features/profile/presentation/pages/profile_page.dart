@@ -4,7 +4,9 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/core/models/user_profile.dart';
+import 'package:shareplace/core/models/profile.dart';
+import 'package:shareplace/core/repositories/profile_repository.dart';
+import 'package:shareplace/core/repositories/supabase_profile_repository.dart';
 import 'package:shareplace/core/widgets/app_header.dart';
 import 'package:shareplace/features/auth/data/auth_service.dart';
 import 'package:shareplace/features/profile/presentation/widgets/profile_avatar.dart';
@@ -16,10 +18,12 @@ import 'package:shareplace/features/profile/presentation/widgets/profile_verific
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
     this.initialProfile,
+    this.profileRepository,
     super.key,
   });
 
-  final UserProfile? initialProfile;
+  final Profile? initialProfile;
+  final ProfileRepository? profileRepository;
 
   @override
   State<ProfilePage> createState() => _ProfilePageState();
@@ -29,13 +33,16 @@ class _ProfilePageState extends State<ProfilePage> {
   static const _placeholderAvatarUrl =
       'https://api.dicebear.com/10.x/adventurer/png?seed=SharePlace';
 
-  UserProfile? _profile;
+  Profile? _profile;
   Uint8List? _selectedImageBytes;
   final _authService = AuthService();
+  late final ProfileRepository _profileRepository;
 
   @override
   void initState() {
     super.initState();
+    _profileRepository =
+        widget.profileRepository ?? SupabaseProfileRepository();
     final initialProfile = widget.initialProfile;
     if (initialProfile != null) {
       _profile = initialProfile;
@@ -104,7 +111,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadCurrentProfile() async {
-    final profile = await _authService.getCurrentUserProfile();
+    final profile = await _profileRepository.getCurrentProfile();
     if (!mounted) {
       return;
     }

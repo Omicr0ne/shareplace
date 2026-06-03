@@ -1,11 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/core/models/user_profile.dart';
+import 'package:shareplace/core/models/profile.dart';
+import 'package:shareplace/core/repositories/profile_repository.dart';
 import 'package:shareplace/features/profile/presentation/pages/profile_page.dart';
 
 void main() {
-  const testProfile = UserProfile(
+  const testProfile = Profile(
     id: 'test-profile',
     firstName: 'Share',
     lastName: 'Place',
@@ -88,7 +89,7 @@ void main() {
     await tester.pumpWidget(
       const MaterialApp(
         home: ProfilePage(
-          initialProfile: UserProfile(
+          initialProfile: Profile(
             id: 'verified-profile',
             firstName: 'Lina',
             lastName: 'Martin',
@@ -150,6 +151,22 @@ void main() {
 
     expect(find.text('Sign in page'), findsOneWidget);
   });
+
+  testWidgets('loads the current profile from the injected repository', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      const MaterialApp(
+        home: ProfilePage(
+          profileRepository: _FakeProfileRepository(profile: testProfile),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Share'), findsOneWidget);
+    expect(find.text('Place'), findsOneWidget);
+  });
 }
 
 Future<void> _tapLogoutButton(WidgetTester tester) async {
@@ -162,4 +179,25 @@ Future<void> _tapLogoutButton(WidgetTester tester) async {
   await tester.pumpAndSettle();
   await tester.tap(find.byKey(const Key('profile-logout-button')));
   await tester.pumpAndSettle();
+}
+
+class _FakeProfileRepository implements ProfileRepository {
+  const _FakeProfileRepository({this.profile});
+
+  final Profile? profile;
+
+  @override
+  Future<Profile> create(Profile profile) async => profile;
+
+  @override
+  Future<Profile?> getByAuthUserId(String authUserId) async => profile;
+
+  @override
+  Future<Profile> getById(String id) async => profile!;
+
+  @override
+  Future<Profile?> getCurrentProfile() async => profile;
+
+  @override
+  Future<Profile> update(Profile profile) async => profile;
 }
