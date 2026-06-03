@@ -8,7 +8,7 @@ class LoginPage extends StatefulWidget {
   const LoginPage({
     AuthService? authService,
     super.key,
-    // Keep the public `authService` parameter name for test injection.
+    // Keep a public named parameter `authService` for widget tests.
     // ignore: prefer_initializing_formals
   }) : _authService = authService;
 
@@ -19,6 +19,12 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
+  static const Color _backgroundColor = Colors.white;
+  static const Color _accentColor = Color(0xFFE8890A);
+  static const Color _textColor = Color(0xFF2F2F2F);
+  static const Color _hintColor = Color(0xFFAAAAAA);
+  static const Color _borderColor = Color(0xFFDDDDDD);
+
   late final AuthService _authService = widget._authService ?? AuthService();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -36,9 +42,7 @@ class _LoginPageState extends State<LoginPage> {
         _emailController.text.trim(),
         _passwordController.text,
       );
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       unawaited(
         Navigator.of(context).pushNamedAndRemoveUntil(
           AppRoutes.home,
@@ -46,9 +50,7 @@ class _LoginPageState extends State<LoginPage> {
         ),
       );
     } on Object catch (error) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Connexion impossible : $error')),
       );
@@ -58,95 +60,118 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Center(
-        child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextField(
-                controller: _passwordController,
-                obscureText: true,
-                decoration: const InputDecoration(
-                  labelText: 'Mot de passe',
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith<Color>((
-                      states,
-                    ) {
-                      if (states.contains(WidgetState.pressed)) {
-                        return Colors.blue.shade900; // couleur au clic
-                      }
-                      return Colors.blue; // couleur normale
-                    }),
-                    foregroundColor: WidgetStateProperty.all(Colors.white),
+      backgroundColor: _backgroundColor,
+      body: SafeArea(
+        child: Center(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 20),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 420),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      onPressed: () => Navigator.maybePop(context),
+                      icon: const Icon(Icons.arrow_back),
+                      color: _textColor,
+                      padding: EdgeInsets.zero,
+                    ),
                   ),
-                  onPressed: () => unawaited(_login()),
-                  child: const Text('Connexion'),
-                ),
+                  const SizedBox(height: 24),
+                  const Text(
+                    'Se connecter',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      color: _accentColor,
+                      fontSize: 26,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  TextField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    style: const TextStyle(color: _textColor, fontSize: 15),
+                    decoration: _inputDecoration(hintText: 'Email'),
+                  ),
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _passwordController,
+                    obscureText: true,
+                    style: const TextStyle(color: _textColor, fontSize: 15),
+                    decoration: _inputDecoration(hintText: 'Mot de passe'),
+                  ),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.forgotPassword,
+                      ),
+                      style: TextButton.styleFrom(
+                        foregroundColor: _accentColor,
+                        padding: const EdgeInsets.only(top: 6),
+                        textStyle: const TextStyle(fontSize: 13),
+                      ),
+                      child: const Text('Mot de passe oublié ?'),
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  SizedBox(
+                    width: double.infinity,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _accentColor,
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        minimumSize: const Size.fromHeight(52),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(30),
+                        ),
+                        textStyle: const TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                      onPressed: () => unawaited(_login()),
+                      child: const Text('Connexion'),
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  TextButton(
+                    onPressed: () =>
+                        Navigator.pushNamed(context, AppRoutes.register),
+                    style: TextButton.styleFrom(
+                      foregroundColor: _hintColor,
+                      textStyle: const TextStyle(fontSize: 14),
+                    ),
+                    child: const Text('Créer un compte'),
+                  ),
+                ],
               ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith<Color>((
-                      states,
-                    ) {
-                      if (states.contains(WidgetState.pressed)) {
-                        return Colors.blue.shade900; // couleur au clic
-                      }
-                      return Colors.blue; // couleur normale
-                    }),
-                    foregroundColor: WidgetStateProperty.all(Colors.white),
-                  ),
-                  onPressed: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.forgotPassword,
-                  ),
-                  child: const Text('Mot de passe oublié'),
-                ),
-              ),
-              const SizedBox(height: 16),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  style: ButtonStyle(
-                    backgroundColor: WidgetStateProperty.resolveWith<Color>((
-                      states,
-                    ) {
-                      if (states.contains(WidgetState.pressed)) {
-                        return Colors.blue.shade900; // couleur au clic
-                      }
-                      return Colors.blue; // couleur normale
-                    }),
-                    foregroundColor: WidgetStateProperty.all(Colors.white),
-                  ),
-                  onPressed: () => Navigator.pushNamed(
-                    context,
-                    AppRoutes.register,
-                  ),
-                  child: const Text('Créer un compte'),
-                ),
-              ),
-            ],
+            ),
           ),
         ),
+      ),
+    );
+  }
+
+  InputDecoration _inputDecoration({required String hintText}) {
+    return InputDecoration(
+      hintText: hintText,
+      hintStyle: const TextStyle(color: _hintColor, fontSize: 15),
+      filled: true,
+      fillColor: Colors.white,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 18, vertical: 16),
+      enabledBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _borderColor),
+      ),
+      focusedBorder: OutlineInputBorder(
+        borderRadius: BorderRadius.circular(12),
+        borderSide: const BorderSide(color: _accentColor, width: 1.5),
       ),
     );
   }
