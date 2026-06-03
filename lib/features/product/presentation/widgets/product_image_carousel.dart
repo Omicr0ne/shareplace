@@ -1,9 +1,16 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 
 class ProductImageCarousel extends StatefulWidget {
-  const ProductImageCarousel({required this.productTitle, super.key});
+  const ProductImageCarousel({
+    required this.productTitle,
+    required this.images,
+    super.key,
+  });
 
   final String productTitle;
+  final List<Uint8List> images;
 
   static const int maxImages = 5;
 
@@ -15,7 +22,7 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
   final PageController _controller = PageController();
   int _currentIndex = 0;
 
-  static const List<_CarouselSlide> _slides = [
+  static const List<_CarouselSlide> _placeholderSlides = [
     _CarouselSlide(
       mainColor: Color(0xFFFFE0B2),
       accentColor: Color(0xFFFFCC80),
@@ -51,6 +58,9 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
 
   @override
   Widget build(BuildContext context) {
+    final displayImages = widget.images.take(ProductImageCarousel.maxImages).toList();
+    final hasImages = displayImages.isNotEmpty;
+
     return Column(
       children: [
         Container(
@@ -74,14 +84,23 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
                   _currentIndex = index;
                 });
               },
-              itemCount: _slides.length,
+              itemCount: hasImages ? displayImages.length : _placeholderSlides.length,
               itemBuilder: (context, index) {
-                final slide = _slides[index];
+                if (hasImages) {
+                  return _CarouselImageView(
+                    imageBytes: displayImages[index],
+                    productTitle: widget.productTitle,
+                    position: index + 1,
+                    total: displayImages.length,
+                  );
+                }
+
+                final slide = _placeholderSlides[index];
                 return _CarouselSlideView(
                   slide: slide,
                   productTitle: widget.productTitle,
                   position: index + 1,
-                  total: _slides.length,
+                  total: _placeholderSlides.length,
                 );
               },
             ),
@@ -90,7 +109,9 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
         const SizedBox(height: 10),
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: List.generate(_slides.length, (index) {
+          children: List.generate(
+            hasImages ? displayImages.length : _placeholderSlides.length,
+            (index) {
             final selected = index == _currentIndex;
             return AnimatedContainer(
               duration: const Duration(milliseconds: 200),
@@ -104,7 +125,8 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
                 borderRadius: BorderRadius.circular(999),
               ),
             );
-          }),
+          },
+          ),
         ),
       ],
     );
@@ -193,6 +215,90 @@ class _CarouselSlideView extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _CarouselImageView extends StatelessWidget {
+  const _CarouselImageView({
+    required this.imageBytes,
+    required this.productTitle,
+    required this.position,
+    required this.total,
+  });
+
+  final Uint8List imageBytes;
+  final String productTitle;
+  final int position;
+  final int total;
+
+  @override
+  Widget build(BuildContext context) {
+    return Stack(
+      children: [
+        Positioned.fill(
+          child: Image.memory(
+            imageBytes,
+            fit: BoxFit.cover,
+          ),
+        ),
+        Positioned.fill(
+          child: DecoratedBox(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [
+                  Colors.black.withValues(alpha: 0.08),
+                  Colors.black.withValues(alpha: 0.22),
+                ],
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          top: 12,
+          right: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.78),
+              borderRadius: BorderRadius.circular(999),
+            ),
+            child: Text(
+              '$position/$total',
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF3E2723),
+              ),
+            ),
+          ),
+        ),
+        Positioned(
+          left: 12,
+          right: 12,
+          bottom: 14,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.78),
+              borderRadius: BorderRadius.circular(14),
+            ),
+            child: Text(
+              productTitle,
+              textAlign: TextAlign.center,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w700,
+                color: Color(0xFF3E2723),
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }

@@ -1,5 +1,9 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:shareplace/features/product/data/products_data.dart';
+import 'package:shareplace/features/product/presentation/widgets/product_image_carousel.dart';
 
 class AddProductPage extends StatefulWidget {
   const AddProductPage({super.key});
@@ -13,9 +17,13 @@ class _AddProductPageState extends State<AddProductPage> {
   final _productController = TextEditingController();
   final _descriptionController = TextEditingController();
   final _cityController = TextEditingController();
+  final _picker = ImagePicker();
 
   final List<String> _tags = [];
+  final List<Uint8List> _productImages = [];
   String? _selectedTag;
+  bool _isImportingImages = false;
+  bool _showImageError = false;
 
   @override
   void dispose() {
@@ -23,6 +31,75 @@ class _AddProductPageState extends State<AddProductPage> {
     _descriptionController.dispose();
     _cityController.dispose();
     super.dispose();
+  }
+
+  Future<void> _pickProductImages() async {
+    if (_productImages.length >= ProductImageCarousel.maxImages) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Limite atteinte: 5 images maximum par produit.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isImportingImages = true;
+    });
+
+    try {
+      final pickedFiles = await _picker.pickMultiImage(imageQuality: 85);
+      if (!mounted) {
+        return;
+      }
+
+      if (pickedFiles.isEmpty) {
+        return;
+      }
+
+      final availableSlots = ProductImageCarousel.maxImages - _productImages.length;
+      final filesToImport = pickedFiles.take(availableSlots).toList();
+      final bytesList = await Future.wait(
+        filesToImport.map((file) => file.readAsBytes()),
+      );
+
+      setState(() {
+        _productImages.addAll(bytesList);
+        _showImageError = false;
+      });
+
+      if (pickedFiles.length > availableSlots && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Seules 5 images maximum peuvent être ajoutées.'),
+          ),
+        );
+      }
+    } on Exception catch (_) {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Impossible d'importer les images pour le moment."),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isImportingImages = false;
+        });
+      }
+    }
+  }
+
+  void _removeImageAt(int index) {
+    setState(() {
+      _productImages.removeAt(index);
+      if (_productImages.isNotEmpty) {
+        _showImageError = false;
+      }
+    });
   }
 
   @override
@@ -64,38 +141,140 @@ class _AddProductPageState extends State<AddProductPage> {
                     ),
                     const SizedBox(height: 18),
                     Container(
-                      height: 180,
                       width: double.infinity,
+                      padding: const EdgeInsets.all(16),
                       decoration: BoxDecoration(
                         color: const Color(0xFFFFF5E9),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(color: const Color(0xFFFFE0B2)),
                       ),
-                      child: const Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                      child: Column(
                         children: [
-                          Icon(
-                            Icons.image_outlined,
-                            size: 54,
-                            color: Color(0xFFEF6C00),
-                          ),
-                          SizedBox(height: 8),
-                          Text(
-                            'Ajouter une image',
-                            style: TextStyle(
-                              fontWeight: FontWeight.w600,
-                              color: Color(0xFF666666),
+                          if (_productImages.isEmpty)
+                            Container(
+                              height: 180,
+                              width: double.infinity,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFF9F0),
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(color: const Color(0xFFFFE0B2)),
+                              ),
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Icon(
+                                    Icons.image_outlined,
+                                    size: 54,
+                                    color: Color(0xFFEF6C00),
+                                  ),
+                                  const SizedBox(height: 8),
+                                  const Text(
+                                    'Ajouter des images',
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w600,
+                                      color: Color(0xFF666666),
+                                    ),
+                                  ),
+                                  const SizedBox(height: 4),
+                                  Text(
+                                    '5 images maximum',
+                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                      color: const Color(0xFF8D6E63),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            )
+                          else
+                            SizedBox(
+                              height: 220,
+                              child: GridView.builder(
+                                itemCount: _productImages.length,
+                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                                  crossAxisCount: 2,
+                                  crossAxisSpacing: 10,
+                                  mainAxisSpacing: 10,
+                                ),
+                                physics: const NeverScrollableScrollPhysics(),
+                                itemBuilder: (context, index) {
+                                  return ClipRRect(
+                                    borderRadius: BorderRadius.circular(14),
+                                    child: Stack(
+                                      fit: StackFit.expand,
+                                      children: [
+                                        Image.memory(
+                                          _productImages[index],
+                                          fit: BoxFit.cover,
+                                        ),
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: GestureDetector(
+                                            onTap: () => _removeImageAt(index),
+                                            child: Container(
+                                              padding: const EdgeInsets.all(6),
+                                              decoration: const BoxDecoration(
+                                                color: Color(0xFFE53935),
+                                                shape: BoxShape.circle,
+                                              ),
+                                              child: const Icon(
+                                                Icons.close,
+                                                size: 14,
+                                                color: Colors.white,
+                                              ),
+                                            ),
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  );
+                                },
+                              ),
+                            ),
+                          const SizedBox(height: 12),
+                          SizedBox(
+                            width: double.infinity,
+                            child: FilledButton.icon(
+                              onPressed: _isImportingImages ? null : _pickProductImages,
+                              icon: _isImportingImages
+                                  ? const SizedBox(
+                                      width: 16,
+                                      height: 16,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : const Icon(Icons.photo_library_outlined),
+                              label: Text(
+                                _isImportingImages
+                                    ? 'Import en cours...'
+                                    : 'Importer depuis la galerie',
+                              ),
+                              style: FilledButton.styleFrom(
+                                backgroundColor: const Color(0xFFEF6C00),
+                                foregroundColor: Colors.white,
+                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(14),
+                                ),
+                              ),
                             ),
                           ),
-                          SizedBox(height: 4),
+                          const SizedBox(height: 6),
                           Text(
-                            'Fonctionnalité en développement',
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 12,
-                              color: Color(0xFF8D6E63),
+                            '${_productImages.length}/${ProductImageCarousel.maxImages} images sélectionnées',
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                              color: const Color(0xFF8D6E63),
                             ),
                           ),
+                          if (_showImageError) ...[
+                            const SizedBox(height: 8),
+                            const Text(
+                              'Veuillez ajouter au moins une image.',
+                              style: TextStyle(color: Colors.red),
+                            ),
+                          ],
                         ],
                       ),
                     ),
@@ -105,8 +284,8 @@ class _AddProductPageState extends State<AddProductPage> {
                       hintText: 'Produit',
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                          ? 'Nom du produit requis'
-                          : null,
+                              ? 'Nom du produit requis'
+                              : null,
                     ),
                     const SizedBox(height: 10),
                     _TextFieldSection(
@@ -115,8 +294,8 @@ class _AddProductPageState extends State<AddProductPage> {
                       maxLines: 4,
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                          ? 'Description requise'
-                          : null,
+                              ? 'Description requise'
+                              : null,
                     ),
                     const SizedBox(height: 10),
                     _TextFieldSection(
@@ -124,8 +303,8 @@ class _AddProductPageState extends State<AddProductPage> {
                       hintText: 'Ville',
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                          ? 'Ville requise'
-                          : null,
+                              ? 'Ville requise'
+                              : null,
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
@@ -236,7 +415,14 @@ class _AddProductPageState extends State<AddProductPage> {
   }
 
   void _submit() {
-    if (!(_formKey.currentState?.validate() ?? false)) {
+    final isFormValid = _formKey.currentState?.validate() ?? false;
+    final hasImages = _productImages.isNotEmpty;
+
+    setState(() {
+      _showImageError = !hasImages;
+    });
+
+    if (!isFormValid || !hasImages) {
       return;
     }
 
@@ -246,6 +432,7 @@ class _AddProductPageState extends State<AddProductPage> {
       description: _descriptionController.text.trim(),
       ville: _cityController.text.trim(),
       tags: List<String>.from(_tags),
+      images: List<Uint8List>.from(_productImages),
     );
 
     Navigator.pop(context, true);

@@ -101,7 +101,9 @@ class _HomePageState extends State<HomePage> {
               title: const Text('Profil'),
               onTap: () {
                 Navigator.pop(context);
-                _showComingSoon(context);
+                unawaited(
+                  Navigator.pushReplacementNamed(context, AppRoutes.profile),
+                );
               },
             ),
             ListTile(
@@ -110,6 +112,46 @@ class _HomePageState extends State<HomePage> {
               onTap: () async {
                 Navigator.pop(context);
                 await _openAddProductPage();
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.price_change_outlined),
+              title: const Text('Mes offres'),
+              onTap: () async {
+                Navigator.pop(context);
+                unawaited(
+                  Navigator.pushReplacementNamed(context, AppRoutes.myDeals),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.history_outlined),
+              title: const Text('Historique des offres'),
+              onTap: () async {
+                Navigator.pop(context);
+                unawaited(
+                  Navigator.pushReplacementNamed(context, AppRoutes.myDeals),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.notifications_outlined),
+              title: const Text('Notifications'),
+              onTap: () async {
+                Navigator.pop(context);
+                unawaited(
+                  Navigator.pushReplacementNamed(context, AppRoutes.notifications),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.gavel_outlined),
+              title: const Text('Mentions légales'),
+              onTap: () async {
+                Navigator.pop(context);
+                unawaited(
+                  Navigator.pushReplacementNamed(context, AppRoutes.legalNotices),
+                );
               },
             ),
           ],

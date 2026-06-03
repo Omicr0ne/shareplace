@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:shareplace/features/product/domain/entities/product_item.dart';
 
 class ProductsData {
@@ -11,6 +13,7 @@ class ProductsData {
       description: 'Canape confortable en bon etat.',
       ville: 'Lyon',
       tags: ['Maison', 'Deco'],
+      images: const [],
     ),
     const ProductItem(
       id: 2,
@@ -19,6 +22,7 @@ class ProductsData {
       description: 'Lampe de chevet style scandinave.',
       ville: 'Paris',
       tags: ['Deco'],
+      images: const [],
     ),
     const ProductItem(
       id: 3,
@@ -27,6 +31,7 @@ class ProductsData {
       description: 'Table basse bois clair.',
       ville: 'Bordeaux',
       tags: ['Maison'],
+      images: const [],
     ),
     const ProductItem(
       id: 4,
@@ -35,6 +40,7 @@ class ProductsData {
       description: 'Chaise pratique pour petit espace.',
       ville: 'Lille',
       tags: ['Maison', 'Jardin'],
+      images: const [],
     ),
     const ProductItem(
       id: 5,
@@ -43,6 +49,7 @@ class ProductsData {
       description: 'Miroir decoratif format vertical.',
       ville: 'Nantes',
       tags: ['Deco'],
+      images: const [],
     ),
   ];
 
@@ -71,6 +78,7 @@ class ProductsData {
     required String description,
     required String ville,
     required List<String> tags,
+    required List<Uint8List> images,
   }) {
     final product = ProductItem(
       id: _nextId++,
@@ -79,6 +87,7 @@ class ProductsData {
       description: description,
       ville: ville,
       tags: List.unmodifiable(tags),
+      images: List.unmodifiable(images),
     );
 
     _products.insert(

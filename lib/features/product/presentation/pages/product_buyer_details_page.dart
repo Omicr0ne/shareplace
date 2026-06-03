@@ -66,7 +66,10 @@ class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 14),
-                  ProductImageCarousel(productTitle: product.article),
+                  ProductImageCarousel(
+                    productTitle: product.article,
+                    images: product.images,
+                  ),
                   const SizedBox(height: 16),
                   Row(
                     children: [

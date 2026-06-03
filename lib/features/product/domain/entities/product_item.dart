@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 class ProductItem {
   const ProductItem({
     required this.id,
@@ -6,6 +8,7 @@ class ProductItem {
     required this.description,
     required this.ville,
     required this.tags,
+    required this.images,
   });
 
   final int id;
@@ -14,4 +17,5 @@ class ProductItem {
   final String description;
   final String ville;
   final List<String> tags;
+  final List<Uint8List> images;
 }
