@@ -57,7 +57,8 @@ class _AddProductPageState extends State<AddProductPage> {
         return;
       }
 
-      final availableSlots = ProductImageCarousel.maxImages - _productImages.length;
+      final availableSlots =
+          ProductImageCarousel.maxImages - _productImages.length;
       final filesToImport = pickedFiles.take(availableSlots).toList();
       final bytesList = await Future.wait(
         filesToImport.map((file) => file.readAsBytes()),
@@ -104,6 +105,12 @@ class _AddProductPageState extends State<AddProductPage> {
 
   @override
   Widget build(BuildContext context) {
+    const productImageGridDelegate = SliverGridDelegateWithFixedCrossAxisCount(
+      crossAxisCount: 2,
+      crossAxisSpacing: 10,
+      mainAxisSpacing: 10,
+    );
+
     return Scaffold(
       backgroundColor: const Color(0xFFFFF3E0),
       appBar: AppBar(
@@ -157,7 +164,9 @@ class _AddProductPageState extends State<AddProductPage> {
                               decoration: BoxDecoration(
                                 color: const Color(0xFFFFF9F0),
                                 borderRadius: BorderRadius.circular(14),
-                                border: Border.all(color: const Color(0xFFFFE0B2)),
+                                border: Border.all(
+                                  color: const Color(0xFFFFE0B2),
+                                ),
                               ),
                               child: Column(
                                 mainAxisAlignment: MainAxisAlignment.center,
@@ -178,9 +187,10 @@ class _AddProductPageState extends State<AddProductPage> {
                                   const SizedBox(height: 4),
                                   Text(
                                     '5 images maximum',
-                                    style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: const Color(0xFF8D6E63),
-                                    ),
+                                    style: Theme.of(context).textTheme.bodySmall
+                                        ?.copyWith(
+                                          color: const Color(0xFF8D6E63),
+                                        ),
                                   ),
                                 ],
                               ),
@@ -190,11 +200,7 @@ class _AddProductPageState extends State<AddProductPage> {
                               height: 220,
                               child: GridView.builder(
                                 itemCount: _productImages.length,
-                                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                                  crossAxisCount: 2,
-                                  crossAxisSpacing: 10,
-                                  mainAxisSpacing: 10,
-                                ),
+                                gridDelegate: productImageGridDelegate,
                                 physics: const NeverScrollableScrollPhysics(),
                                 itemBuilder: (context, index) {
                                   return ClipRRect(
@@ -235,7 +241,9 @@ class _AddProductPageState extends State<AddProductPage> {
                           SizedBox(
                             width: double.infinity,
                             child: FilledButton.icon(
-                              onPressed: _isImportingImages ? null : _pickProductImages,
+                              onPressed: _isImportingImages
+                                  ? null
+                                  : _pickProductImages,
                               icon: _isImportingImages
                                   ? const SizedBox(
                                       width: 16,
@@ -254,7 +262,9 @@ class _AddProductPageState extends State<AddProductPage> {
                               style: FilledButton.styleFrom(
                                 backgroundColor: const Color(0xFFEF6C00),
                                 foregroundColor: Colors.white,
-                                padding: const EdgeInsets.symmetric(vertical: 14),
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 14,
+                                ),
                                 shape: RoundedRectangleBorder(
                                   borderRadius: BorderRadius.circular(14),
                                 ),
@@ -264,9 +274,10 @@ class _AddProductPageState extends State<AddProductPage> {
                           const SizedBox(height: 6),
                           Text(
                             '${_productImages.length}/${ProductImageCarousel.maxImages} images sélectionnées',
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                              color: const Color(0xFF8D6E63),
-                            ),
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(
+                                  color: const Color(0xFF8D6E63),
+                                ),
                           ),
                           if (_showImageError) ...[
                             const SizedBox(height: 8),
@@ -284,8 +295,8 @@ class _AddProductPageState extends State<AddProductPage> {
                       hintText: 'Produit',
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                              ? 'Nom du produit requis'
-                              : null,
+                          ? 'Nom du produit requis'
+                          : null,
                     ),
                     const SizedBox(height: 10),
                     _TextFieldSection(
@@ -294,8 +305,8 @@ class _AddProductPageState extends State<AddProductPage> {
                       maxLines: 4,
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                              ? 'Description requise'
-                              : null,
+                          ? 'Description requise'
+                          : null,
                     ),
                     const SizedBox(height: 10),
                     _TextFieldSection(
@@ -303,8 +314,8 @@ class _AddProductPageState extends State<AddProductPage> {
                       hintText: 'Ville',
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                              ? 'Ville requise'
-                              : null,
+                          ? 'Ville requise'
+                          : null,
                     ),
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(

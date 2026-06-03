@@ -140,7 +140,10 @@ class _HomePageState extends State<HomePage> {
               onTap: () async {
                 Navigator.pop(context);
                 unawaited(
-                  Navigator.pushReplacementNamed(context, AppRoutes.notifications),
+                  Navigator.pushReplacementNamed(
+                    context,
+                    AppRoutes.notifications,
+                  ),
                 );
               },
             ),
@@ -150,7 +153,10 @@ class _HomePageState extends State<HomePage> {
               onTap: () async {
                 Navigator.pop(context);
                 unawaited(
-                  Navigator.pushReplacementNamed(context, AppRoutes.legalNotices),
+                  Navigator.pushReplacementNamed(
+                    context,
+                    AppRoutes.legalNotices,
+                  ),
                 );
               },
             ),

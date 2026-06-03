@@ -13,7 +13,7 @@ class ProductsData {
       description: 'Canape confortable en bon etat.',
       ville: 'Lyon',
       tags: ['Maison', 'Deco'],
-      images: const [],
+      images: [],
     ),
     const ProductItem(
       id: 2,
@@ -22,7 +22,7 @@ class ProductsData {
       description: 'Lampe de chevet style scandinave.',
       ville: 'Paris',
       tags: ['Deco'],
-      images: const [],
+      images: [],
     ),
     const ProductItem(
       id: 3,
@@ -31,7 +31,7 @@ class ProductsData {
       description: 'Table basse bois clair.',
       ville: 'Bordeaux',
       tags: ['Maison'],
-      images: const [],
+      images: [],
     ),
     const ProductItem(
       id: 4,
@@ -40,7 +40,7 @@ class ProductsData {
       description: 'Chaise pratique pour petit espace.',
       ville: 'Lille',
       tags: ['Maison', 'Jardin'],
-      images: const [],
+      images: [],
     ),
     const ProductItem(
       id: 5,
@@ -49,7 +49,7 @@ class ProductsData {
       description: 'Miroir decoratif format vertical.',
       ville: 'Nantes',
       tags: ['Deco'],
-      images: const [],
+      images: [],
     ),
   ];
 

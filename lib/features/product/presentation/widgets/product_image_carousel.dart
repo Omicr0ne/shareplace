@@ -58,7 +58,9 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
 
   @override
   Widget build(BuildContext context) {
-    final displayImages = widget.images.take(ProductImageCarousel.maxImages).toList();
+    final displayImages = widget.images
+        .take(ProductImageCarousel.maxImages)
+        .toList();
     final hasImages = displayImages.isNotEmpty;
 
     return Column(
@@ -84,7 +86,9 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
                   _currentIndex = index;
                 });
               },
-              itemCount: hasImages ? displayImages.length : _placeholderSlides.length,
+              itemCount: hasImages
+                  ? displayImages.length
+                  : _placeholderSlides.length,
               itemBuilder: (context, index) {
                 if (hasImages) {
                   return _CarouselImageView(
@@ -112,20 +116,20 @@ class _ProductImageCarouselState extends State<ProductImageCarousel> {
           children: List.generate(
             hasImages ? displayImages.length : _placeholderSlides.length,
             (index) {
-            final selected = index == _currentIndex;
-            return AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              margin: const EdgeInsets.symmetric(horizontal: 4),
-              width: selected ? 20 : 8,
-              height: 8,
-              decoration: BoxDecoration(
-                color: selected
-                    ? const Color(0xFFEF6C00)
-                    : const Color(0xFFFFCC80),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            );
-          },
+              final selected = index == _currentIndex;
+              return AnimatedContainer(
+                duration: const Duration(milliseconds: 200),
+                margin: const EdgeInsets.symmetric(horizontal: 4),
+                width: selected ? 20 : 8,
+                height: 8,
+                decoration: BoxDecoration(
+                  color: selected
+                      ? const Color(0xFFEF6C00)
+                      : const Color(0xFFFFCC80),
+                  borderRadius: BorderRadius.circular(999),
+                ),
+              );
+            },
           ),
         ),
       ],

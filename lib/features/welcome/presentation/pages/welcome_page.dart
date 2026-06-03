@@ -96,7 +96,8 @@ class WelcomePage extends StatelessWidget {
   // Bouton de connexion.
   Widget _primaryButton(BuildContext context) {
     return ElevatedButton(
-      onPressed: onLoginPressed ?? () => Navigator.pushNamed(context, AppRoutes.login),
+      onPressed:
+          onLoginPressed ?? () => Navigator.pushNamed(context, AppRoutes.login),
       style: ElevatedButton.styleFrom(
         backgroundColor: const Color(0xFFEF6C00),
         foregroundColor: Colors.white,
@@ -112,7 +113,9 @@ class WelcomePage extends StatelessWidget {
   // Bouton d'inscription.
   Widget _secondaryButton(BuildContext context) {
     return OutlinedButton(
-      onPressed: onRegisterPressed ?? () => Navigator.pushNamed(context, AppRoutes.register),
+      onPressed:
+          onRegisterPressed ??
+          () => Navigator.pushNamed(context, AppRoutes.register),
       style: OutlinedButton.styleFrom(
         side: const BorderSide(color: Color(0xFFEF6C00), width: 1.4),
         foregroundColor: const Color(0xFFBF360C),
@@ -140,5 +143,4 @@ class WelcomePage extends StatelessWidget {
       child: const Text('Accueil'),
     );
   }
-
 }
