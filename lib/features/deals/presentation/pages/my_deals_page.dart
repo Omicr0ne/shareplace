@@ -94,9 +94,7 @@ class _MyDealsPageState extends State<MyDealsPage> {
   Future<void> _loadMyDeals() async {
     try {
       final profile = await _profileRepository.getCurrentProfile();
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       if (profile == null) {
         unawaited(
           Navigator.of(
@@ -106,57 +104,111 @@ class _MyDealsPageState extends State<MyDealsPage> {
         return;
       }
 
-      final deals = await _dealRepository.getBySellerProfileId(profile.id);
-      final myApplications = await _dealRepository
-          .getApplicationsByApplicantProfileId(profile.id);
+      // ── Chargement des deals du vendeur ──────────────────────────────────
+      final sellerDeals =
+          await _dealRepository.getBySellerProfileId(profile.id);
+
+      // Nombre de candidats par deal (pour l'affichage vendeur)
       var interestedCountByDeal = const <String, int>{};
       try {
-        interestedCountByDeal = await _dealRepository
-            .countApplicationsByDealIds(
-              deals.map((deal) => deal.id).toList(growable: false),
-            );
+        interestedCountByDeal = await _dealRepository.countApplicationsByDealIds(
+          sellerDeals.map((d) => d.id).toList(growable: false),
+        );
       } on Object {
-        // Keep the page usable even when deal_applications is unavailable.
         interestedCountByDeal = const {};
       }
-      if (!mounted) {
-        return;
+
+      // Candidatures acceptées par deal (pour récupérer les numéros acheteurs)
+      final Map<String, List<String>> acceptedPhonesByDeal = {};
+      if (sellerDeals.isNotEmpty) {
+        try {
+          final allApplications = await _dealRepository.getApplicationsByDealIds(
+            sellerDeals.map((d) => d.id).toList(growable: false),
+          );
+          final accepted = allApplications
+              .where((a) => a.status == DealApplicationStatus.accepted);
+          for (final application in accepted) {
+            try {
+              final buyerProfile = await _profileRepository.getById(
+                application.applicantProfileId,
+              );
+              final phone = buyerProfile.phone;
+              if (phone != null && phone.isNotEmpty) {
+                acceptedPhonesByDeal
+                    .putIfAbsent(application.dealId, () => [])
+                    .add(phone);
+              }
+            } on Object {
+              continue;
+            }
+          }
+        } on Object {
+          // Numéros non disponibles — on continue sans planter.
+        }
       }
+
+      // ── Chargement des deals où l'utilisateur est acheteur ───────────────
+      final myApplications = await _dealRepository
+          .getApplicationsByApplicantProfileId(profile.id);
 
       final interestedDeals = <MyDealSummary>[];
       for (final application in myApplications) {
         try {
           final deal = await _dealRepository.getById(application.dealId);
-          if (deal.sellerProfileId == profile.id) {
-            continue;
+          // Exclure les deals dont on est vendeur
+          if (deal.sellerProfileId == profile.id) continue;
+
+          // Numéro du vendeur (uniquement si la candidature est acceptée)
+          String? sellerPhone;
+          if (application.status == DealApplicationStatus.accepted) {
+            try {
+              final sellerProfile = await _profileRepository.getById(
+                deal.sellerProfileId,
+              );
+              sellerPhone = sellerProfile.phone;
+            } on Object {
+              // Numéro non disponible — on continue sans planter.
+            }
           }
-          interestedDeals.add(_toInterestedSummary(deal, application));
+
+          interestedDeals.add(
+            _toInterestedSummary(
+              deal,
+              application,
+              counterpartPhone: sellerPhone,
+            ),
+          );
         } on Object {
           continue;
         }
       }
 
+      if (!mounted) return;
       setState(() {
         _loadedDeals = [
-          for (final deal in deals)
+          for (final deal in sellerDeals)
             _toSellerSummary(
               deal,
               interestedCount: interestedCountByDeal[deal.id] ?? 0,
+              // Numéros des acheteurs acceptés, séparés par une virgule
+              counterpartPhone: acceptedPhonesByDeal[deal.id]?.join(', '),
             ),
           ...interestedDeals,
         ];
       });
     } on Object catch (error) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() {
         _loadError = error;
       });
     }
   }
 
-  MyDealSummary _toSellerSummary(Deal deal, {required int interestedCount}) {
+  MyDealSummary _toSellerSummary(
+    Deal deal, {
+    required int interestedCount,
+    String? counterpartPhone,
+  }) {
     return MyDealSummary(
       id: deal.id,
       role: MyDealRole.seller,
@@ -167,13 +219,15 @@ class _MyDealsPageState extends State<MyDealsPage> {
       description: deal.description,
       coverImageUrl: _fallbackCoverImageUrl,
       interestedCount: interestedCount,
+      counterpartPhone: counterpartPhone,
     );
   }
 
   MyDealSummary _toInterestedSummary(
     Deal deal,
-    DealApplicationRecord application,
-  ) {
+    DealApplicationRecord application, {
+    String? counterpartPhone,
+  }) {
     return MyDealSummary(
       id: deal.id,
       role: MyDealRole.interested,
@@ -181,6 +235,7 @@ class _MyDealsPageState extends State<MyDealsPage> {
       title: deal.title,
       description: deal.description,
       coverImageUrl: _fallbackCoverImageUrl,
+      counterpartPhone: counterpartPhone,
     );
   }
 
@@ -197,9 +252,7 @@ class _MyDealsPageState extends State<MyDealsPage> {
     try {
       final profile = await _profileRepository.getCurrentProfile();
       final deal = await _dealRepository.getById(summary.id);
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
 
       final page = deal.sellerProfileId == profile?.id
           ? DealSellerDetailsPage(
@@ -217,9 +270,7 @@ class _MyDealsPageState extends State<MyDealsPage> {
         context,
       ).push(MaterialPageRoute<void>(builder: (context) => page));
     } on Object {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text("Impossible d'ouvrir l'offre.")),
       );

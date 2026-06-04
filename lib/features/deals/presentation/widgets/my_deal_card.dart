@@ -96,13 +96,52 @@ class MyDealCard extends StatelessWidget {
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
+                  border: Border.all(color: const Color(0xFFD7F0E8)),
                 ),
-                child: Text(
-                  '${deal.role == MyDealRole.seller ? 'Acheteur' : 'Vendeur'} '
-                  ': ${deal.counterpartPhone}',
-                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                    fontWeight: FontWeight.w700,
-                  ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.phone_outlined,
+                          size: 15,
+                          color: Color(0xFF2F6F5E),
+                        ),
+                        const SizedBox(width: 6),
+                        Text(
+                          deal.role == MyDealRole.seller
+                              ? 'Numéro(s) acheteur(s)'
+                              : 'Numéro du vendeur',
+                          style: Theme.of(context).textTheme.bodySmall
+                              ?.copyWith(
+                                color: const Color(0xFF2F6F5E),
+                                fontWeight: FontWeight.w700,
+                              ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    // Vendeur : plusieurs numéros possibles (séparés par ", ")
+                    if (deal.role == MyDealRole.seller)
+                      ...deal.counterpartPhone!.split(', ').map(
+                        (phone) => Padding(
+                          padding: const EdgeInsets.only(top: 2),
+                          child: Text(
+                            phone,
+                            style: Theme.of(context).textTheme.bodyMedium
+                                ?.copyWith(fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      )
+                    // Acheteur : un seul numéro
+                    else
+                      Text(
+                        deal.counterpartPhone!,
+                        style: Theme.of(context).textTheme.bodyMedium
+                            ?.copyWith(fontWeight: FontWeight.w700),
+                      ),
+                  ],
                 ),
               ),
             ],

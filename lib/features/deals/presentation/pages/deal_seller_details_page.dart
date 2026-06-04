@@ -28,6 +28,11 @@ class DealSellerDetailsPage extends StatefulWidget {
 
 class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
   late final ProfileRepository _profileRepository;
+
+  // Deal local — mis à jour après chaque acceptation pour refléter
+  // le maxWinnerCount décrémenté sans recharger toute la page.
+  late Deal _deal;
+
   List<_ApplicationView>? _applications;
   Object? _applicationsError;
   bool _isUpdatingApplication = false;
@@ -35,6 +40,7 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
   @override
   void initState() {
     super.initState();
+    _deal = widget.deal;
     _profileRepository =
         widget.profileRepository ?? SupabaseProfileRepository();
     unawaited(_loadApplications());
@@ -84,7 +90,7 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
   Future<void> _loadApplications() async {
     try {
       final applications = await widget.dealRepository.getApplicationsByDealIds(
-        [widget.deal.id],
+        [_deal.id],
       );
       final views = <_ApplicationView>[];
       for (final application in applications) {
@@ -99,44 +105,41 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
           views.add(_ApplicationView(application: application));
         }
       }
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() {
         _applications = views;
         _applicationsError = null;
       });
     } on Object catch (error) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       setState(() {
         _applicationsError = error;
       });
     }
   }
 
+  /// Accepte ou refuse une candidature.
+  /// Si acceptation : décrémente maxWinnerCount.
+  /// Si maxWinnerCount atteint 0 : ferme le deal.
   Future<void> _decideApplication(
     DealApplicationRecord application, {
     required bool accept,
   }) async {
-    if (_isUpdatingApplication) {
-      return;
-    }
+    if (_isUpdatingApplication) return;
     setState(() {
       _isUpdatingApplication = true;
     });
+
     try {
       if (accept) {
         await widget.dealRepository.acceptApplication(application.id);
+        await _decrementLots();
       } else {
         await widget.dealRepository.rejectApplication(application.id);
       }
       await _loadApplications();
     } on Object {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Impossible de traiter la demande.')),
       );
@@ -149,9 +152,31 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
     }
   }
 
+  /// Décrémente maxWinnerCount de 1.
+  /// Si le compteur atteint 0 → ferme le deal via cancel().
+  Future<void> _decrementLots() async {
+    final newCount = _deal.maxWinnerCount - 1;
+
+    if (newCount <= 0) {
+      await widget.dealRepository.cancel(_deal.id);
+      if (!mounted) return;
+      // Retourne true pour que la home recharge la liste.
+      Navigator.pop(context, true);
+      return;
+    }
+
+    final updated = await widget.dealRepository.update(
+      _deal.copyWith(maxWinnerCount: newCount),
+    );
+    if (!mounted) return;
+    setState(() {
+      _deal = updated;
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-    final deal = widget.deal;
+    final deal = _deal;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EF),
@@ -196,10 +221,7 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                   ),
                   const SizedBox(height: 14),
                   // ── Carousel d'images ────────────────────────────────────
-                  DealImageCarousel(
-                    dealTitle: deal.title,
-                    images: const [],
-                  ),
+                  DealImageCarousel(dealTitle: deal.title, images: const []),
                   const SizedBox(height: 16),
                   // ── Badge denrée alimentaire ─────────────────────────────
                   if (deal.isFoodSupply) ...[
@@ -256,7 +278,7 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  // ── Nombre de lots ───────────────────────────────────────
+                  // ── Nombre de lots restants ──────────────────────────────
                   Row(
                     children: [
                       const Icon(
@@ -268,7 +290,7 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                       Text(
                         '${deal.maxWinnerCount} '
                         'lot${deal.maxWinnerCount > 1 ? 's' : ''} '
-                        'disponible${deal.maxWinnerCount > 1 ? 's' : ''}',
+                        'restant${deal.maxWinnerCount > 1 ? 's' : ''}',
                         style: const TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -287,7 +309,9 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
                           onTap: () {
-                            unawaited(Navigator.pushNamed(context, '/profile'));
+                            unawaited(
+                              Navigator.pushNamed(context, '/profile'),
+                            );
                           },
                           child: const SizedBox(
                             width: 36,
@@ -339,6 +363,7 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // ── Liste des candidatures ───────────────────────────────
                   _ApplicationsSection(
                     applications: _applications,
                     hasError: _applicationsError != null,
@@ -361,6 +386,8 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
     );
   }
 }
+
+// ── Section candidatures ─────────────────────────────────────────────────────
 
 class _ApplicationsSection extends StatelessWidget {
   const _ApplicationsSection({
@@ -429,6 +456,9 @@ class _ApplicationTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final application = view.application;
     final isPending = application.status == DealApplicationStatus.pending;
+    final isAccepted = application.status == DealApplicationStatus.accepted;
+    final phone = view.profile?.phone;
+
     return DecoratedBox(
       decoration: BoxDecoration(
         color: Colors.white,
@@ -447,11 +477,44 @@ class _ApplicationTile extends StatelessWidget {
                 color: Color(0xFF3E2723),
               ),
             ),
-            const SizedBox(height: 6),
+            const SizedBox(height: 4),
             Text(
               _statusLabel(application.status),
               style: const TextStyle(color: Color(0xFF6D4C41)),
             ),
+            // ── Numéro de l'acheteur (visible uniquement si accepté) ──────
+            if (isAccepted && phone != null) ...[
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  const Icon(
+                    Icons.phone_outlined,
+                    size: 16,
+                    color: Color(0xFFEF6C00),
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    phone,
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w600,
+                      color: Color(0xFF3E2723),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+            if (isAccepted && phone == null) ...[
+              const SizedBox(height: 8),
+              const Text(
+                'Numéro non renseigné',
+                style: TextStyle(
+                  fontSize: 12,
+                  color: Color(0xFF8D6E63),
+                  fontStyle: FontStyle.italic,
+                ),
+              ),
+            ],
+            // ── Boutons accepter / refuser (pending uniquement) ───────────
             if (isPending) ...[
               const SizedBox(height: 10),
               Row(
@@ -504,9 +567,7 @@ class _ApplicationView {
 
   String get displayName {
     final profile = this.profile;
-    if (profile == null) {
-      return 'Acheteur';
-    }
+    if (profile == null) return 'Acheteur';
     return '${profile.firstName} ${profile.lastName}';
   }
 }
