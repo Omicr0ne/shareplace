@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shareplace/app/shareplace_app.dart';
 import 'package:shareplace/core/config/supabase_config.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
@@ -21,6 +22,8 @@ class MainApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const SharePlaceApp();
+    return const ProviderScope(
+      child: SharePlaceApp(),
+    );
   }
 }

@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/core/models/profile.dart';
-import 'package:shareplace/core/repositories/profile_repository.dart';
 import 'package:shareplace/features/profile/presentation/pages/profile_page.dart';
+import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/domain/entities/profile.dart';
 
 void main() {
   const testProfile = Profile(
@@ -70,7 +70,7 @@ void main() {
       MaterialApp(
         home: const ProfilePage(initialProfile: testProfile),
         routes: {
-          AppRoutes.profileVerification: (_) => const Scaffold(
+          AppRoutes.studentVerification: (_) => const Scaffold(
             body: Text('Verification page'),
           ),
         },
@@ -124,7 +124,7 @@ void main() {
       MaterialApp(
         home: const ProfilePage(initialProfile: testProfile),
         routes: {
-          AppRoutes.login: (_) => const Scaffold(body: Text('Sign in page')),
+          AppRoutes.signIn: (_) => const Scaffold(body: Text('Sign in page')),
         },
       ),
     );
@@ -143,7 +143,7 @@ void main() {
       MaterialApp(
         home: const ProfilePage(),
         routes: {
-          AppRoutes.login: (_) => const Scaffold(body: Text('Sign in page')),
+          AppRoutes.signIn: (_) => const Scaffold(body: Text('Sign in page')),
         },
       ),
     );

@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:shareplace/features/auth/presentation/pages/sign_in_page.dart';
 import 'package:shareplace/features/home/presentation/pages/home_page.dart';
-import 'package:shareplace/features/login/presentation/pages/login_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class AuthGate extends StatelessWidget {
@@ -18,7 +18,7 @@ class AuthGate extends StatelessWidget {
   Widget build(BuildContext context) {
     final client = _clientOrNull();
     if (client == null) {
-      return const LoginPage();
+      return const SignInPage();
     }
 
     return StreamBuilder<AuthState>(
@@ -33,7 +33,7 @@ class AuthGate extends StatelessWidget {
         if (session != null) {
           return const HomePage();
         }
-        return const LoginPage();
+        return const SignInPage();
       },
     );
   }

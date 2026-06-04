@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/core/models/deal.dart';
-import 'package:shareplace/core/repositories/deal_repository.dart';
-import 'package:shareplace/core/repositories/profile_repository.dart';
-import 'package:shareplace/core/repositories/supabase_deal_repository.dart';
-import 'package:shareplace/core/repositories/supabase_profile_repository.dart';
-import 'package:shareplace/features/product/presentation/pages/product_buyer_details_page.dart';
-import 'package:shareplace/features/product/presentation/pages/product_seller_details_page.dart';
+import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
+import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
+import 'package:shareplace/features/deals/domain/entities/deal.dart';
+import 'package:shareplace/features/deals/presentation/pages/deal_buyer_details_page.dart';
+import 'package:shareplace/features/deals/presentation/pages/deal_seller_details_page.dart';
+import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -40,12 +40,14 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<void> _openAddDealPage() async {
-    final currentProfileId =
-        (await _homeDataFuture)?.currentProfileId ?? '';
+    final currentProfileId = (await _homeDataFuture)?.currentProfileId ?? '';
+    if (!mounted) {
+      return;
+    }
 
     final result = await Navigator.pushNamed(
       context,
-      AppRoutes.addProduct,
+      AppRoutes.createDeal,
       arguments: {
         'dealRepository': _dealRepository,
         'sellerProfileId': currentProfileId,
@@ -61,11 +63,11 @@ class _HomePageState extends State<HomePage> {
 
   Future<void> _openDealDetails(Deal deal, String? currentProfileId) async {
     final page = deal.sellerProfileId == currentProfileId
-        ? ProductSellerDetailsPage(
+        ? DealSellerDetailsPage(
             deal: deal,
             dealRepository: _dealRepository,
           )
-        : ProductBuyerDetailsPage(
+        : DealBuyerDetailsPage(
             deal: deal,
             dealRepository: _dealRepository,
           );
@@ -150,7 +152,7 @@ class _HomePageState extends State<HomePage> {
             ),
             ListTile(
               leading: const Icon(Icons.add_box_outlined),
-              title: const Text('Ajouter un produit'),
+              title: const Text('Créer une offre'),
               onTap: () async {
                 Navigator.pop(context);
                 await _openAddDealPage();
@@ -172,7 +174,10 @@ class _HomePageState extends State<HomePage> {
               onTap: () async {
                 Navigator.pop(context);
                 unawaited(
-                  Navigator.pushReplacementNamed(context, AppRoutes.history),
+                  Navigator.pushReplacementNamed(
+                    context,
+                    AppRoutes.dealHistory,
+                  ),
                 );
               },
             ),

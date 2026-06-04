@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shareplace/core/models/deal.dart';
-import 'package:shareplace/core/models/profile.dart';
-import 'package:shareplace/core/repositories/deal_repository.dart';
-import 'package:shareplace/core/repositories/profile_repository.dart';
-import 'package:shareplace/features/my_deals/domain/entities/my_deal_summary.dart';
-import 'package:shareplace/features/my_deals/presentation/pages/my_deals_page.dart';
+import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
+import 'package:shareplace/features/deals/domain/entities/deal.dart';
+import 'package:shareplace/features/deals/domain/entities/my_deal_summary.dart';
+import 'package:shareplace/features/deals/presentation/pages/my_deals_page.dart';
+import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/domain/entities/profile.dart';
 
 void main() {
   const longDescription =

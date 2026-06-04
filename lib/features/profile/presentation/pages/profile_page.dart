@@ -4,9 +4,6 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/core/models/profile.dart';
-import 'package:shareplace/core/repositories/profile_repository.dart';
-import 'package:shareplace/core/repositories/supabase_profile_repository.dart';
 import 'package:shareplace/core/widgets/app_header.dart';
 import 'package:shareplace/features/auth/data/auth_service.dart';
 import 'package:shareplace/features/profile/presentation/widgets/profile_avatar.dart';
@@ -14,6 +11,9 @@ import 'package:shareplace/features/profile/presentation/widgets/profile_descrip
 import 'package:shareplace/features/profile/presentation/widgets/profile_identity_fields.dart';
 import 'package:shareplace/features/profile/presentation/widgets/profile_logout_button.dart';
 import 'package:shareplace/features/profile/presentation/widgets/profile_verification_button.dart';
+import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
+import 'package:shareplace/features/profiles/domain/entities/profile.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({
@@ -119,7 +119,7 @@ class _ProfilePageState extends State<ProfilePage> {
       unawaited(
         Navigator.of(
           context,
-        ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false),
+        ).pushNamedAndRemoveUntil(AppRoutes.signIn, (_) => false),
       );
       return;
     }
@@ -173,12 +173,12 @@ class _ProfilePageState extends State<ProfilePage> {
     unawaited(
       Navigator.of(
         context,
-      ).pushNamedAndRemoveUntil(AppRoutes.home, (_) => false),
+      ).pushNamedAndRemoveUntil(AppRoutes.deals, (_) => false),
     );
   }
 
   void _goProfileVerification() {
-    unawaited(Navigator.of(context).pushNamed(AppRoutes.profileVerification));
+    unawaited(Navigator.of(context).pushNamed(AppRoutes.studentVerification));
   }
 
   Future<void> _showSignOutConfirmation() {
@@ -222,7 +222,7 @@ class _ProfilePageState extends State<ProfilePage> {
     unawaited(
       Navigator.of(
         context,
-      ).pushNamedAndRemoveUntil(AppRoutes.login, (_) => false),
+      ).pushNamedAndRemoveUntil(AppRoutes.signIn, (_) => false),
     );
   }
 }

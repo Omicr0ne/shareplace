@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
 
-class AccountVerificationPage extends StatelessWidget {
-  const AccountVerificationPage({super.key});
-  static const String routeName = AppRoutes.studentVerification;
+class ForgotPasswordPage extends StatelessWidget {
+  const ForgotPasswordPage({super.key});
+  static const String routeName = AppRoutes.forgotPassword;
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +31,10 @@ class AccountVerificationPage extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const _PageHeader(title: 'Verification du compte'),
+                    const _PageHeader(title: 'Mot de passe oublie'),
                     const SizedBox(height: 20),
                     const Text(
-                      'Entrez votre email puis le code de verification a '
+                      'Entrez votre email et le code de verification a '
                       '6 chiffres.',
                       style: TextStyle(color: Color(0xFFC9C9C9)),
                     ),
@@ -61,18 +61,21 @@ class AccountVerificationPage extends StatelessWidget {
                         ),
                         onPressed: () {},
                         child: const Text(
-                          'Verifier le compte',
+                          'Valider',
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
                     ),
                     const SizedBox(height: 8),
                     TextButton(
-                      onPressed: () {},
+                      onPressed: () => Navigator.pushNamed(
+                        context,
+                        AppRoutes.studentVerification,
+                      ),
                       style: TextButton.styleFrom(
                         foregroundColor: const Color(0xFFFFA500),
                       ),
-                      child: const Text('Renvoyer le code'),
+                      child: const Text('Aller a verification du compte'),
                     ),
                     TextButton(
                       onPressed: () => Navigator.pushNamed(

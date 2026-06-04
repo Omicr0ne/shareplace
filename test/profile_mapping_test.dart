@@ -1,5 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shareplace/core/models/profile.dart';
+import 'package:shareplace/features/profiles/data/mappers/profile_insert_mapper.dart';
+import 'package:shareplace/features/profiles/domain/entities/profile.dart';
 
 void main() {
   group('Profile', () {
@@ -73,6 +74,25 @@ void main() {
         'anonymized_at': null,
         'created_at': '2026-01-01T09:00:00.000Z',
         'updated_at': '2026-01-03T09:00:00.000Z',
+      });
+    });
+
+    test('omits generated fields from Supabase insert json', () {
+      const profile = Profile(
+        id: '',
+        authUserId: 'auth-id',
+        firstName: 'Lina',
+        lastName: 'Martin',
+        phone: '06 12 34 56 78',
+      );
+
+      expect(profileInsertJson(profile), {
+        'auth_user_id': 'auth-id',
+        'first_name': 'Lina',
+        'last_name': 'Martin',
+        'phone': '06 12 34 56 78',
+        'description': '',
+        'student_verification_status': 'none',
       });
     });
   });

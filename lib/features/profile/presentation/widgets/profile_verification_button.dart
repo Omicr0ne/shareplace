@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shareplace/core/models/user_profile.dart';
+import 'package:shareplace/features/profiles/domain/entities/student_verification_status.dart';
 
 class ProfileVerificationButton extends StatelessWidget {
   const ProfileVerificationButton({

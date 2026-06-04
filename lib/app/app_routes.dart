@@ -1,16 +1,18 @@
 abstract final class AppRoutes {
   static const welcome = '/welcome';
-  static const home = '/home';
-  static const myDeals = '/my-deals';
+  static const deals = '/deals';
+  static const createDeal = '/deals/create';
+  static const myDeals = '/deals/mine';
+  static const dealHistory = '/deals/history';
   static const legalNotices = '/legal-notices';
   static const notifications = '/notifications';
-  static const report = '/report';
+  static const createReport = '/reports/create';
   static const profile = '/profile';
-  static const profileVerification = '/profile-verification';
-  static const login = '/login';
-  static const register = '/register';
-  static const addProduct = '/add-product';
+  static const studentVerification = '/profile/student-verification';
+  static const signIn = '/sign-in';
+  static const signUp = '/sign-up';
   static const forgotPassword = '/forgot-password';
   static const search = '/search-filter';
-  static const history = '/history';
+
+  static String dealDetails(String id) => '/deals/$id';
 }

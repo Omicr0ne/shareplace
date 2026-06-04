@@ -5,15 +5,17 @@ import 'package:shareplace/app/shareplace_app.dart';
 void main() {
   test('defines app route paths', () {
     expect(AppRoutes.welcome, '/welcome');
-    expect(AppRoutes.home, '/home');
+    expect(AppRoutes.deals, '/deals');
+    expect(AppRoutes.createDeal, '/deals/create');
+    expect(AppRoutes.dealDetails('abc-123'), '/deals/abc-123');
+    expect(AppRoutes.myDeals, '/deals/mine');
+    expect(AppRoutes.dealHistory, '/deals/history');
     expect(AppRoutes.profile, '/profile');
-    expect(AppRoutes.login, '/login');
-    expect(AppRoutes.register, '/register');
-    expect(AppRoutes.profileVerification, '/profile-verification');
-    expect(AppRoutes.myDeals, '/my-deals');
-    expect(AppRoutes.addProduct, '/add-product');
+    expect(AppRoutes.studentVerification, '/profile/student-verification');
+    expect(AppRoutes.signIn, '/sign-in');
+    expect(AppRoutes.signUp, '/sign-up');
     expect(AppRoutes.forgotPassword, '/forgot-password');
-    expect(AppRoutes.search, '/search-filter');
+    expect(AppRoutes.createReport, '/reports/create');
   });
 
   testWidgets('opens my deals page from initial web route', (tester) async {
