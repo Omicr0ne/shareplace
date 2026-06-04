@@ -272,7 +272,10 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
                               Navigator.pushNamed(
                                 context,
                                 '/reports/create',
-                                arguments: deal.sellerProfileId,
+                                arguments: {
+                                  'reportedProfileId': deal.sellerProfileId,
+                                  'dealId': deal.id,
+                                },
                               ),
                             );
                           },

@@ -60,6 +60,27 @@ class SharePlaceApp extends StatelessWidget {
           );
         }
 
+        if (settings.name == AppRoutes.createReport) {
+          final args = settings.arguments;
+          String? reportedProfileId;
+          String? dealId;
+
+          if (args is String) {
+            reportedProfileId = args;
+          } else if (args is Map<String, dynamic>) {
+            reportedProfileId = args['reportedProfileId'] as String?;
+            dealId = args['dealId'] as String?;
+          }
+
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => ReportPage(
+              reportedProfileId: reportedProfileId,
+              dealId: dealId,
+            ),
+          );
+        }
+
         final page = _pageFor(settings.name);
         if (page != null) {
           return MaterialPageRoute<void>(
