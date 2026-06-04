@@ -56,6 +56,34 @@ dart run tool/check.dart --quick
 
 Cette variante lance seulement le formatage et l'analyse statique.
 
+## Seeder Supabase
+
+Un script de seed est disponible pour charger un jeu de données de dev dans Supabase, et le retirer ensuite.
+
+Commandes :
+
+```bash
+dart run tool/seed/supabase_seed.dart seed
+```
+
+```bash
+dart run tool/seed/supabase_seed.dart reset
+```
+
+`reset` vide les tables `reports`, `deal_applications`, `deal_tags`, `deals` et `profiles`.
+
+Par défaut, le script lit `.env`. Vous pouvez préciser un autre fichier :
+
+```bash
+dart run tool/seed/supabase_seed.dart seed --env=.env.local
+```
+
+Variables nécessaires dans le fichier d'environnement :
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (recommandé)
+- ou `SUPABASE_ANON_KEY` (fallback, peut échouer selon vos policies RLS)
+
 ## GitHub CI Obligatoire
 
 La CI GitHub Actions est définie dans `.github/workflows/flutter-ci.yml`.
