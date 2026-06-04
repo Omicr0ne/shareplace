@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/core/repositories/deal_repository.dart';
+import 'package:shareplace/core/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/history/presentation/pages/historique_page.dart';
 import 'package:shareplace/features/home/presentation/pages/home_page.dart';
 import 'package:shareplace/features/legal_notices/presentation/pages/legal_notices_page.dart';
@@ -14,7 +16,7 @@ import 'package:shareplace/features/register/presentation/pages/registration_pag
 import 'package:shareplace/features/report/presentation/pages/report_page.dart';
 import 'package:shareplace/features/search/presentation/pages/search_with_filter_page.dart';
 import 'package:shareplace/features/welcome/presentation/pages/welcome_page.dart';
-
+ 
 class SharePlaceApp extends StatelessWidget {
   const SharePlaceApp({super.key});
 
