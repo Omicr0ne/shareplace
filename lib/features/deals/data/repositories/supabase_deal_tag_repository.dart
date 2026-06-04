@@ -30,10 +30,11 @@ class SupabaseDealTagRepository implements DealTagRepository {
 
     final tagRows = await client
         .from('tags')
-        .select('id,name')
-        .inFilter('name', uniqueTags);
+        .select('id,label')
+        .inFilter('label', uniqueTags);
+
     final tagIdsByName = {
-      for (final row in tagRows) row['name']! as String: row['id']! as String,
+      for (final row in tagRows) row['label']! as String: row['id']! as String,
     };
 
     final missingTags = uniqueTags
