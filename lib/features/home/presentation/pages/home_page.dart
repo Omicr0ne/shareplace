@@ -130,7 +130,7 @@ class _HomePageState extends State<HomePage> {
               onTap: () async {
                 Navigator.pop(context);
                 unawaited(
-                  Navigator.pushReplacementNamed(context, AppRoutes.myDeals),
+                  Navigator.pushReplacementNamed(context, AppRoutes.history),
                 );
               },
             ),

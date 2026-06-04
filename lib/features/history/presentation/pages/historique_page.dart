@@ -19,8 +19,8 @@ class HistoryDeal {
   final String state; // deal_state (ici toujours 'closed' ou conclu)
 }
 
-class HistoriquePage extends StatelessWidget {
-  const HistoriquePage({super.key});
+class HistoryPage extends StatelessWidget {
+  const HistoryPage({super.key});
 
   // Simulation des données d'historique (Deals conclus/closed) pour le Sprint 1
   static const List<HistoryDeal> _historiqueDeals = [

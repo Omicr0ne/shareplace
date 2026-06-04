@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/features/history/presentation/pages/historique_page.dart';
 import 'package:shareplace/features/home/presentation/pages/home_page.dart';
 import 'package:shareplace/features/legal_notices/presentation/pages/legal_notices_page.dart';
 import 'package:shareplace/features/login/presentation/pages/forgot_password_page.dart';
@@ -42,6 +43,7 @@ class SharePlaceApp extends StatelessWidget {
         AppRoutes.forgotPassword: (_) => const ForgotPasswordPage(),
         AppRoutes.profileVerification: (_) => const AccountVerificationPage(),
         AppRoutes.search: (_) => const SearchWithFilterPage(),
+        AppRoutes.history: (_) => const HistoryPage(),
       },
     );
   }
