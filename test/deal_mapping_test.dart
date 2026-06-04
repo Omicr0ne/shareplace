@@ -51,6 +51,19 @@ void main() {
       });
     });
 
+    test('omits null timestamps from Supabase insert json', () {
+      final deal = Deal(
+        id: '',
+        sellerProfileId: 'seller-id',
+        title: 'Canapé convertible',
+        description: 'Canapé deux places en bon état.',
+        postalCode: '69001',
+      );
+
+      expect(deal.toJson(), isNot(contains('created_at')));
+      expect(deal.toJson(), isNot(contains('updated_at')));
+    });
+
     test('rejects invalid deal constraints', () {
       expect(
         () => Deal(

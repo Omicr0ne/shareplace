@@ -82,8 +82,8 @@ class Deal {
       'max_winner_count': maxWinnerCount,
       'state': state.name,
       'is_food_supply': isFoodSupply,
-      'created_at': createdAt?.toUtc().toIso8601String(),
-      'updated_at': updatedAt?.toUtc().toIso8601String(),
+      if (createdAt != null) 'created_at': createdAt!.toUtc().toIso8601String(),
+      if (updatedAt != null) 'updated_at': updatedAt!.toUtc().toIso8601String(),
     };
   }
 

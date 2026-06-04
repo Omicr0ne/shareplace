@@ -17,9 +17,19 @@ import 'package:shareplace/features/profile/presentation/pages/account_verificat
 import 'package:shareplace/features/profile/presentation/pages/profile_page.dart';
 import 'package:shareplace/features/report/presentation/pages/report_page.dart';
 import 'package:shareplace/features/search/presentation/pages/search_with_filter_page.dart';
+import 'package:supabase_flutter/supabase_flutter.dart';
+
+typedef AuthenticatedCheck = bool Function();
 
 class SharePlaceApp extends StatelessWidget {
-  const SharePlaceApp({super.key});
+  const SharePlaceApp({
+    AuthenticatedCheck? isAuthenticated,
+    super.key,
+    // Keep a public named parameter `isAuthenticated` for widget tests.
+    // ignore: prefer_initializing_formals
+  }) : _isAuthenticated = isAuthenticated;
+
+  final AuthenticatedCheck? _isAuthenticated;
 
   @override
   Widget build(BuildContext context) {
@@ -27,41 +37,77 @@ class SharePlaceApp extends StatelessWidget {
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
       initialRoute: AppRoutes.welcome,
-      routes: {
-        AppRoutes.welcome: (_) => const WelcomePage(),
-        AppRoutes.deals: (_) => const HomePage(),
-        AppRoutes.legalNotices: (_) => const LegalNoticesPage(),
-        AppRoutes.notifications: (_) => const NotificationsPage(),
-        AppRoutes.createReport: (_) => const ReportPage(),
-        AppRoutes.profile: (_) => const ProfilePage(),
-        AppRoutes.myDeals: (_) => const MyDealsPage(),
-        AppRoutes.signIn: (_) => const SignInPage(),
-        AppRoutes.signUp: (_) => const SignUpPage(),
-        AppRoutes.forgotPassword: (_) => const ForgotPasswordPage(),
-        AppRoutes.studentVerification: (_) => const AccountVerificationPage(),
-        AppRoutes.search: (_) => const SearchWithFilterPage(),
-        AppRoutes.dealHistory: (_) => const HistoryPage(),
-      },
       onGenerateRoute: (settings) {
+        if (!_isPublicRoute(settings.name) && !_hasAuthenticatedSession()) {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => const SignInPage(),
+          );
+        }
+
         if (settings.name == AppRoutes.createDeal) {
           final args = settings.arguments as Map<String, dynamic>?;
 
           final dealRepository =
               args?['dealRepository'] as DealRepository? ??
               SupabaseDealRepository();
-          final sellerProfileId = args?['sellerProfileId'] as String? ?? '';
 
           return MaterialPageRoute<bool>(
             settings: settings,
             builder: (_) => CreateDealPage(
               dealRepository: dealRepository,
-              sellerProfileId: sellerProfileId,
             ),
+          );
+        }
+
+        final page = _pageFor(settings.name);
+        if (page != null) {
+          return MaterialPageRoute<void>(
+            settings: settings,
+            builder: (_) => page,
           );
         }
 
         return null;
       },
     );
+  }
+
+  bool _hasAuthenticatedSession() {
+    if (_isAuthenticated != null) {
+      return _isAuthenticated();
+    }
+
+    try {
+      return Supabase.instance.client.auth.currentSession != null;
+    } on Object {
+      return false;
+    }
+  }
+
+  static bool _isPublicRoute(String? routeName) {
+    return routeName == AppRoutes.welcome ||
+        routeName == AppRoutes.signIn ||
+        routeName == AppRoutes.signUp ||
+        routeName == AppRoutes.forgotPassword;
+  }
+
+  static Widget? _pageFor(String? routeName) {
+    return switch (routeName) {
+      AppRoutes.welcome => const WelcomePage(),
+      AppRoutes.deals => const HomePage(),
+      AppRoutes.legalNotices => const LegalNoticesPage(),
+      AppRoutes.notifications => const NotificationsPage(),
+      AppRoutes.createReport => const ReportPage(),
+      AppRoutes.profile => const ProfilePage(),
+      AppRoutes.myDeals => const MyDealsPage(),
+      AppRoutes.signIn => const SignInPage(),
+      AppRoutes.signUp => const SignUpPage(),
+      AppRoutes.forgotPassword => const ForgotPasswordPage(),
+      AppRoutes.studentVerification => const AccountVerificationPage(),
+      AppRoutes.search => const SearchWithFilterPage(),
+      AppRoutes.dealHistory => const HistoryPage(),
+      _ => null,
+    };
   }
 }

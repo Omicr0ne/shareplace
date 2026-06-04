@@ -111,16 +111,22 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   Future<void> _loadCurrentProfile() async {
-    final profile = await _profileRepository.getCurrentProfile();
+    final Profile? profile;
+    try {
+      profile = await _profileRepository.getCurrentProfile();
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      _goSignIn();
+      return;
+    }
+
     if (!mounted) {
       return;
     }
     if (profile == null) {
-      unawaited(
-        Navigator.of(
-          context,
-        ).pushNamedAndRemoveUntil(AppRoutes.signIn, (_) => false),
-      );
+      _goSignIn();
       return;
     }
 
@@ -219,6 +225,10 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!mounted) {
       return;
     }
+    _goSignIn();
+  }
+
+  void _goSignIn() {
     unawaited(
       Navigator.of(
         context,

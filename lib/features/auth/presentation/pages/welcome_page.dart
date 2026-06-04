@@ -72,17 +72,6 @@ class WelcomePage extends StatelessWidget {
                         Expanded(child: _secondaryButton(context)),
                       ],
                     ),
-
-                    // Espace avant le bouton 'Accueil' pour séparation visuelle
-                    const SizedBox(height: 16),
-
-                    // Bouton de test pour accéder à la page d'accueil.
-                    // À supprimer quand la navigation finale sera prête.
-                    Row(
-                      children: [
-                        Expanded(child: _homeButton(context)),
-                      ],
-                    ),
                   ],
                 ),
               ),
@@ -126,22 +115,6 @@ class WelcomePage extends StatelessWidget {
         ),
       ),
       child: const Text("S'inscrire"),
-    );
-  }
-
-  // Bouton d'accès direct à la page d'accueil (à supprimer)
-  Widget _homeButton(BuildContext context) {
-    return ElevatedButton(
-      onPressed: () => Navigator.pushNamed(context, AppRoutes.deals),
-      style: ElevatedButton.styleFrom(
-        backgroundColor: const Color(0xFFEF6C00),
-        foregroundColor: Colors.white,
-        padding: const EdgeInsets.symmetric(vertical: 14),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(14),
-        ),
-      ),
-      child: const Text('Accueil'),
     );
   }
 }

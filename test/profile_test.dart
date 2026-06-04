@@ -152,6 +152,24 @@ void main() {
     expect(find.text('Sign in page'), findsOneWidget);
   });
 
+  testWidgets('redirects to login when loading the current profile fails', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: const ProfilePage(
+          profileRepository: _ThrowingProfileRepository(),
+        ),
+        routes: {
+          AppRoutes.signIn: (_) => const Scaffold(body: Text('Sign in page')),
+        },
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Sign in page'), findsOneWidget);
+  });
+
   testWidgets('loads the current profile from the injected repository', (
     tester,
   ) async {
@@ -197,6 +215,31 @@ class _FakeProfileRepository implements ProfileRepository {
 
   @override
   Future<Profile?> getCurrentProfile() async => profile;
+
+  @override
+  Future<Profile> update(Profile profile) async => profile;
+}
+
+class _ThrowingProfileRepository implements ProfileRepository {
+  const _ThrowingProfileRepository();
+
+  @override
+  Future<Profile> create(Profile profile) async => profile;
+
+  @override
+  Future<Profile?> getByAuthUserId(String authUserId) async {
+    throw StateError('Session unavailable.');
+  }
+
+  @override
+  Future<Profile> getById(String id) async {
+    throw StateError('Session unavailable.');
+  }
+
+  @override
+  Future<Profile?> getCurrentProfile() async {
+    throw StateError('Session unavailable.');
+  }
 
   @override
   Future<Profile> update(Profile profile) async => profile;

@@ -18,16 +18,33 @@ void main() {
     expect(AppRoutes.createReport, '/reports/create');
   });
 
-  testWidgets('opens my deals page from initial web route', (tester) async {
+  testWidgets('opens my deals page from initial web route when signed in', (
+    tester,
+  ) async {
     tester.binding.platformDispatcher.defaultRouteNameTestValue =
         AppRoutes.myDeals;
     addTearDown(
       tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
     );
 
-    await tester.pumpWidget(const SharePlaceApp());
+    await tester.pumpWidget(SharePlaceApp(isAuthenticated: () => true));
 
     expect(find.text('Mes offres'), findsOneWidget);
     expect(find.text('Profil'), findsNothing);
+  });
+
+  testWidgets('redirects protected web routes to sign in by default', (
+    tester,
+  ) async {
+    tester.binding.platformDispatcher.defaultRouteNameTestValue =
+        AppRoutes.myDeals;
+    addTearDown(
+      tester.binding.platformDispatcher.clearDefaultRouteNameTestValue,
+    );
+
+    await tester.pumpWidget(SharePlaceApp(isAuthenticated: () => false));
+
+    expect(find.text('Se connecter'), findsOneWidget);
+    expect(find.text('Mes offres'), findsNothing);
   });
 }

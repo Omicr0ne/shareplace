@@ -4,18 +4,26 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
+import 'package:shareplace/features/deals/data/repositories/deal_tag_repository.dart';
+import 'package:shareplace/features/deals/data/repositories/supabase_deal_tag_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/presentation/widgets/deal_image_carousel.dart';
+import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 
 class CreateDealPage extends StatefulWidget {
   const CreateDealPage({
     required this.dealRepository,
-    required this.sellerProfileId,
+    this.profileRepository,
+    this.dealTagRepository,
+    this.initialProductImages = const [],
     super.key,
   });
 
   final DealRepository dealRepository;
-  final String sellerProfileId;
+  final ProfileRepository? profileRepository;
+  final DealTagRepository? dealTagRepository;
+  final List<Uint8List> initialProductImages;
 
   @override
   State<CreateDealPage> createState() => _CreateDealPageState();
@@ -35,6 +43,20 @@ class _CreateDealPageState extends State<CreateDealPage> {
   bool _isImportingImages = false;
   bool _showImageError = false;
   bool _isFoodSupply = false;
+  bool _isSubmitting = false;
+
+  late final ProfileRepository _profileRepository =
+      widget.profileRepository ?? SupabaseProfileRepository();
+  late final DealTagRepository _dealTagRepository =
+      widget.dealTagRepository ?? SupabaseDealTagRepository();
+
+  @override
+  void initState() {
+    super.initState();
+    _productImages.addAll(
+      widget.initialProductImages.take(DealImageCarousel.maxImages),
+    );
+  }
 
   @override
   void dispose() {
@@ -362,28 +384,31 @@ class _CreateDealPageState extends State<CreateDealPage> {
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(color: const Color(0xFFFFE0B2)),
                       ),
-                      child: SwitchListTile(
-                        title: const Text(
-                          "Il s'agit de nourriture",
-                          style: TextStyle(
-                            fontSize: 14,
-                            color: Color(0xFF3E2723),
+                      child: Material(
+                        color: Colors.transparent,
+                        child: SwitchListTile(
+                          title: const Text(
+                            "Il s'agit de nourriture",
+                            style: TextStyle(
+                              fontSize: 14,
+                              color: Color(0xFF3E2723),
+                            ),
                           ),
-                        ),
-                        subtitle: const Text(
-                          'Denrée alimentaire',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Color(0xFF8D6E63),
+                          subtitle: const Text(
+                            'Denrée alimentaire',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Color(0xFF8D6E63),
+                            ),
                           ),
+                          value: _isFoodSupply,
+                          activeThumbColor: const Color(0xFFEF6C00),
+                          onChanged: (value) {
+                            setState(() {
+                              _isFoodSupply = value;
+                            });
+                          },
                         ),
-                        value: _isFoodSupply,
-                        activeThumbColor: const Color(0xFFEF6C00),
-                        onChanged: (value) {
-                          setState(() {
-                            _isFoodSupply = value;
-                          });
-                        },
                       ),
                     ),
                     const SizedBox(height: 10),
@@ -444,7 +469,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
                       width: double.infinity,
                       height: 50,
                       child: ElevatedButton(
-                        onPressed: _submit,
+                        onPressed: _isSubmitting ? null : _submit,
                         style: ElevatedButton.styleFrom(
                           backgroundColor: const Color(0xFFEF6C00),
                           foregroundColor: Colors.white,
@@ -507,12 +532,20 @@ class _CreateDealPageState extends State<CreateDealPage> {
   }
 
   Future<void> _submitDeal() async {
+    setState(() {
+      _isSubmitting = true;
+    });
+
     try {
+      final currentProfile = await _profileRepository.getCurrentProfile();
+      if (currentProfile == null) {
+        throw StateError('No current profile found.');
+      }
       final maxWinners = int.tryParse(_maxWinnerController.text.trim()) ?? 1;
 
       final deal = Deal(
         id: '',
-        sellerProfileId: widget.sellerProfileId,
+        sellerProfileId: currentProfile.id,
         title: _titleController.text.trim(),
         description: _descriptionController.text.trim(),
         postalCode: _postalCodeController.text.trim(),
@@ -520,7 +553,8 @@ class _CreateDealPageState extends State<CreateDealPage> {
         isFoodSupply: _isFoodSupply,
       );
 
-      await widget.dealRepository.create(deal);
+      final createdDeal = await widget.dealRepository.create(deal);
+      await _dealTagRepository.setTagsForDeal(createdDeal.id, _tags);
 
       // TODO(team): upload local images when Supabase Storage is in scope.
 
@@ -528,6 +562,9 @@ class _CreateDealPageState extends State<CreateDealPage> {
       Navigator.pop(context, true);
     } on Object catch (_) {
       if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+      });
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Impossible de créer l'offre pour le moment."),
