@@ -1,4 +1,6 @@
+import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 
 import 'package:supabase/supabase.dart';
 
@@ -45,6 +47,8 @@ Future<void> _seed(SupabaseClient client) async {
 
   await client.from('profiles').upsert(_seedProfiles, onConflict: 'id');
   await client.from('deals').upsert(_seedDeals, onConflict: 'id');
+  await _seedProfileImages(client);
+  await _seedDealImages(client);
   await client
       .from('deal_applications')
       .upsert(_seedApplications, onConflict: 'id');
@@ -61,8 +65,14 @@ Future<void> _reset(SupabaseClient client) async {
       .from('deal_applications')
       .delete()
       .inFilter('id', _seedApplicationIds);
+  await client.from('deal_images').delete().inFilter('deal_id', _seedDealIds);
+  await client
+      .from('profiles')
+      .update({'profile_picture_url': null})
+      .inFilter('id', _seedProfileIds);
   await client.from('deals').delete().inFilter('id', _seedDealIds);
   await client.from('profiles').delete().inFilter('id', _seedProfileIds);
+  await _removeSeedStorageFiles(client);
 
   stdout.writeln('Reset completed.');
 }
@@ -142,6 +152,203 @@ Future<void> _upsertReportsWithFallback(SupabaseClient client) async {
       }
       throw StateError('Unable to upsert report with fallback states.');
     }
+  }
+}
+
+Future<void> _seedProfileImages(SupabaseClient client) async {
+  for (final profileId in _seedProfileIds) {
+    final path = _profileImagePathByProfileId[profileId]!;
+    final bytes = _profileImageBytesByProfileId[profileId]!;
+    await client.storage
+        .from(_profileImagesBucket)
+        .uploadBinary(
+          path,
+          bytes,
+          fileOptions: const FileOptions(
+            contentType: 'image/png',
+            upsert: true,
+          ),
+        );
+    final publicUrl = client.storage
+        .from(_profileImagesBucket)
+        .getPublicUrl(
+          path,
+        );
+    await client
+        .from('profiles')
+        .update({'profile_picture_url': publicUrl})
+        .eq(
+          'id',
+          profileId,
+        );
+  }
+}
+
+Future<void> _seedDealImages(SupabaseClient client) async {
+  await client.from('deal_images').delete().inFilter('deal_id', _seedDealIds);
+
+  final uploaded = <_UploadedDealSeedImage>[];
+  for (final image in _seedDealImageFixtures) {
+    await client.storage
+        .from(_dealImagesBucket)
+        .uploadBinary(
+          image.storagePath,
+          image.bytes,
+          fileOptions: const FileOptions(
+            contentType: 'image/png',
+            upsert: true,
+          ),
+        );
+    uploaded.add(
+      _UploadedDealSeedImage(
+        id: image.id,
+        dealId: image.dealId,
+        position: image.position,
+        path: image.storagePath,
+        publicUrl: client.storage
+            .from(_dealImagesBucket)
+            .getPublicUrl(
+              image.storagePath,
+            ),
+      ),
+    );
+  }
+
+  PostgrestException? lastError;
+  final payloadVariants = <List<Map<String, Object?>>>[
+    uploaded
+        .map(
+          (item) => {
+            'id': item.id,
+            'deal_id': item.dealId,
+            'url': item.publicUrl,
+            'storage_path': item.path,
+            'position': item.position,
+          },
+        )
+        .toList(growable: false),
+    uploaded
+        .map(
+          (item) => {
+            'id': item.id,
+            'deal_id': item.dealId,
+            'url': item.publicUrl,
+            'storage_path': item.path,
+            'sort_order': item.position,
+          },
+        )
+        .toList(growable: false),
+    uploaded
+        .map(
+          (item) => {
+            'id': item.id,
+            'deal_id': item.dealId,
+            'image_url': item.publicUrl,
+            'storage_path': item.path,
+            'position': item.position,
+          },
+        )
+        .toList(growable: false),
+    uploaded
+        .map(
+          (item) => {
+            'id': item.id,
+            'deal_id': item.dealId,
+            'url': item.publicUrl,
+            'position': item.position,
+          },
+        )
+        .toList(growable: false),
+    uploaded
+        .map(
+          (item) => {
+            'id': item.id,
+            'deal_id': item.dealId,
+            'image_url': item.publicUrl,
+            'position': item.position,
+          },
+        )
+        .toList(growable: false),
+    uploaded
+        .map(
+          (item) => {
+            'deal_id': item.dealId,
+            'url': item.publicUrl,
+            'position': item.position,
+          },
+        )
+        .toList(growable: false),
+    uploaded
+        .map(
+          (item) => {
+            'deal_id': item.dealId,
+            'image_url': item.publicUrl,
+            'position': item.position,
+          },
+        )
+        .toList(growable: false),
+    uploaded
+        .map(
+          (item) => {
+            'deal_id': item.dealId,
+            'url': item.publicUrl,
+            'storage_path': item.path,
+            'position': item.position,
+          },
+        )
+        .toList(growable: false),
+    uploaded
+        .map(
+          (item) => {
+            'deal_id': item.dealId,
+            'url': item.publicUrl,
+          },
+        )
+        .toList(growable: false),
+    uploaded
+        .map(
+          (item) => {
+            'deal_id': item.dealId,
+            'image_url': item.publicUrl,
+          },
+        )
+        .toList(growable: false),
+  ];
+
+  for (final payload in payloadVariants) {
+    try {
+      await client.from('deal_images').insert(payload);
+      return;
+    } on PostgrestException catch (error) {
+      lastError = error;
+    }
+  }
+
+  if (lastError != null) {
+    throw Exception('Unable to seed deal images: ${lastError.message}');
+  }
+  throw StateError('Unable to seed deal images.');
+}
+
+Future<void> _removeSeedStorageFiles(SupabaseClient client) async {
+  try {
+    await client.storage
+        .from(_profileImagesBucket)
+        .remove(
+          _profileImagePathByProfileId.values.toList(),
+        );
+  } on Object {
+    // Ignore if files do not exist.
+  }
+
+  try {
+    await client.storage
+        .from(_dealImagesBucket)
+        .remove(
+          _seedDealImageFixtures.map((image) => image.storagePath).toList(),
+        );
+  } on Object {
+    // Ignore if files do not exist.
   }
 }
 
@@ -240,3 +447,90 @@ const _seedApplicationIds = <String>[
 const _seedReportIds = <String>[
   'ccccccc1-cccc-cccc-cccc-ccccccccccc1',
 ];
+
+const _profileImagesBucket = 'profile-images';
+const _dealImagesBucket = 'deal-images';
+
+const _profileImagePathByProfileId = <String, String>{
+  '11111111-1111-1111-1111-111111111111':
+      '11111111-1111-1111-1111-111111111111/avatar.png',
+  '22222222-2222-2222-2222-222222222222':
+      '22222222-2222-2222-2222-222222222222/avatar.png',
+  '33333333-3333-3333-3333-333333333333':
+      '33333333-3333-3333-3333-333333333333/avatar.png',
+};
+
+final _profileImageBytesByProfileId = <String, Uint8List>{
+  '11111111-1111-1111-1111-111111111111': _seedOrangePixel,
+  '22222222-2222-2222-2222-222222222222': _seedBluePixel,
+  '33333333-3333-3333-3333-333333333333': _seedGreenPixel,
+};
+
+final List<_DealSeedImage> _seedDealImageFixtures = <_DealSeedImage>[
+  _DealSeedImage(
+    id: 'ddddddd1-dddd-dddd-dddd-ddddddddddd1',
+    dealId: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
+    position: 0,
+    storagePath: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1/0.png',
+    bytes: _seedOrangePixel,
+  ),
+  _DealSeedImage(
+    id: 'ddddddd2-dddd-dddd-dddd-ddddddddddd2',
+    dealId: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
+    position: 1,
+    storagePath: 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1/1.png',
+    bytes: _seedBluePixel,
+  ),
+  _DealSeedImage(
+    id: 'ddddddd3-dddd-dddd-dddd-ddddddddddd3',
+    dealId: 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2',
+    position: 0,
+    storagePath: 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2/0.png',
+    bytes: _seedGreenPixel,
+  ),
+];
+
+final Uint8List _seedOrangePixel = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8z8AA'
+  'RQMBg0xS0V8AAAAASUVORK5CYII=',
+);
+final Uint8List _seedBluePixel = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8A'
+  'AT8B9M6mkHkAAAAASUVORK5CYII=',
+);
+final Uint8List _seedGreenPixel = base64Decode(
+  'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP4zwAA'
+  'AgMBNQottwAAAABJRU5ErkJggg==',
+);
+
+class _DealSeedImage {
+  const _DealSeedImage({
+    required this.id,
+    required this.dealId,
+    required this.position,
+    required this.storagePath,
+    required this.bytes,
+  });
+
+  final String id;
+  final String dealId;
+  final int position;
+  final String storagePath;
+  final Uint8List bytes;
+}
+
+class _UploadedDealSeedImage {
+  const _UploadedDealSeedImage({
+    required this.id,
+    required this.dealId,
+    required this.position,
+    required this.path,
+    required this.publicUrl,
+  });
+
+  final String id;
+  final String dealId;
+  final int position;
+  final String path;
+  final String publicUrl;
+}

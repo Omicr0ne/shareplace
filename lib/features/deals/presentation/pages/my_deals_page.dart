@@ -121,7 +121,7 @@ class _MyDealsPageState extends State<MyDealsPage> {
       }
 
       // Candidatures acceptées par deal (pour récupérer les numéros acheteurs)
-      final Map<String, List<String>> acceptedPhonesByDeal = {};
+      final acceptedPhonesByDeal = <String, List<String>>{};
       if (sellerDeals.isNotEmpty) {
         try {
           final allApplications = await _dealRepository

@@ -130,7 +130,7 @@ class MyDealCard extends StatelessWidget {
                             (phone) => Padding(
                               padding: const EdgeInsets.only(top: 2),
                               child: Text(
-                                phone,
+                                'Acheteur : $phone',
                                 style: Theme.of(context).textTheme.bodyMedium
                                     ?.copyWith(fontWeight: FontWeight.w700),
                               ),
@@ -139,7 +139,7 @@ class MyDealCard extends StatelessWidget {
                     // Acheteur : un seul numéro
                     else
                       Text(
-                        deal.counterpartPhone!,
+                        'Vendeur : ${deal.counterpartPhone!}',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w700,
                         ),
