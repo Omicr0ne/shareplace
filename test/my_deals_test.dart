@@ -152,6 +152,81 @@ void main() {
     expect(find.text('Canapé convertible'), findsOneWidget);
     expect(find.text('0 intéressé'), findsOneWidget);
   });
+
+  testWidgets('loads interested deals from injected repositories', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MyDealsPage(
+          profileRepository: const _FakeProfileRepository(
+            profile: Profile(
+              id: 'buyer-id',
+              firstName: 'Lina',
+              lastName: 'Martin',
+            ),
+          ),
+          dealRepository: _FakeDealRepository(
+            deals: [
+              Deal(
+                id: 'interested-deal-id',
+                sellerProfileId: 'seller-id',
+                title: 'Bibliothèque',
+                description: 'Bibliothèque solide en bois clair.',
+                postalCode: '69001',
+              ),
+            ],
+            applications: [
+              DealApplicationRecord(
+                id: 'application-id',
+                dealId: 'interested-deal-id',
+                applicantProfileId: 'buyer-id',
+                status: DealApplicationStatus.pending,
+                createdAt: DateTime(2026),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text('Bibliothèque'), findsOneWidget);
+    expect(find.text('En attente'), findsOneWidget);
+  });
+
+  testWidgets('opens deal details when tapping the deal image', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: MyDealsPage(
+          profileRepository: const _FakeProfileRepository(
+            profile: Profile(
+              id: 'seller-id',
+              firstName: 'Lina',
+              lastName: 'Martin',
+            ),
+          ),
+          dealRepository: _FakeDealRepository(
+            deals: [
+              Deal(
+                id: 'deal-id',
+                sellerProfileId: 'seller-id',
+                title: 'Canapé convertible',
+                description: 'Canapé deux places en bon état.',
+                postalCode: '69001',
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byType(Image).first);
+    await tester.pumpAndSettle();
+
+    expect(find.text('Vous publiez cette annonce'), findsOneWidget);
+  });
 }
 
 class _FakeProfileRepository implements ProfileRepository {
@@ -176,9 +251,13 @@ class _FakeProfileRepository implements ProfileRepository {
 }
 
 class _FakeDealRepository implements DealRepository {
-  const _FakeDealRepository({required this.deals});
+  const _FakeDealRepository({
+    required this.deals,
+    this.applications = const [],
+  });
 
   final List<Deal> deals;
+  final List<DealApplicationRecord> applications;
 
   @override
   Future<void> addApplication({
@@ -186,6 +265,9 @@ class _FakeDealRepository implements DealRepository {
     required String applicantProfileId,
     int quantity = 1,
   }) async {}
+
+  @override
+  Future<void> acceptApplication(String applicationId) async {}
 
   @override
   Future<void> cancel(String id) async {}
@@ -201,20 +283,29 @@ class _FakeDealRepository implements DealRepository {
   Future<Deal> create(Deal deal) async => deal;
 
   @override
-  Future<Deal> getById(String id) async => deals.first;
+  Future<Deal> getById(String id) async => deals.firstWhere(
+    (deal) => deal.id == id,
+    orElse: () => deals.first,
+  );
 
   @override
   Future<List<DealApplicationRecord>> getApplicationsByApplicantProfileId(
     String applicantProfileId,
   ) async {
-    return const [];
+    return applications
+        .where(
+          (application) => application.applicantProfileId == applicantProfileId,
+        )
+        .toList(growable: false);
   }
 
   @override
   Future<List<DealApplicationRecord>> getApplicationsByDealIds(
     List<String> dealIds,
   ) async {
-    return const [];
+    return applications
+        .where((application) => dealIds.contains(application.dealId))
+        .toList(growable: false);
   }
 
   @override
@@ -234,6 +325,9 @@ class _FakeDealRepository implements DealRepository {
   }) async {
     return false;
   }
+
+  @override
+  Future<void> rejectApplication(String applicationId) async {}
 
   @override
   Future<void> removeApplication({

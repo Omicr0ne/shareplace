@@ -21,6 +21,18 @@ class SupabaseDealTagRepository implements DealTagRepository {
   }
 
   @override
+  Future<List<String>> getAvailableTags() async {
+    final response = await _requireClient()
+        .from('tags')
+        .select('label')
+        .order('label');
+
+    return response
+        .map((row) => row['label']! as String)
+        .toList(growable: false);
+  }
+
+  @override
   Future<void> setTagsForDeal(String dealId, List<String> tags) async {
     final client = _requireClient();
     final uniqueTags = tags.toSet().toList(growable: false);

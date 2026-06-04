@@ -5,10 +5,12 @@ import 'package:shareplace/features/deals/presentation/widgets/my_deal_status_ch
 class MyDealCard extends StatelessWidget {
   const MyDealCard({
     required this.deal,
+    this.onImageTap,
     super.key,
   });
 
   final MyDealSummary deal;
+  final VoidCallback? onImageTap;
 
   @override
   Widget build(BuildContext context) {
@@ -27,23 +29,27 @@ class MyDealCard extends StatelessWidget {
             Row(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                ClipRRect(
+                InkWell(
+                  onTap: onImageTap,
                   borderRadius: BorderRadius.circular(16),
-                  child: Image.network(
-                    deal.coverImageUrl,
-                    width: 104,
-                    height: 86,
-                    fit: BoxFit.cover,
-                    errorBuilder: (context, error, stackTrace) {
-                      return Container(
-                        width: 104,
-                        height: 86,
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.surfaceContainerHighest,
-                        child: const Icon(Icons.image_outlined),
-                      );
-                    },
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(16),
+                    child: Image.network(
+                      deal.coverImageUrl,
+                      width: 104,
+                      height: 86,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 104,
+                          height: 86,
+                          color: Theme.of(
+                            context,
+                          ).colorScheme.surfaceContainerHighest,
+                          child: const Icon(Icons.image_outlined),
+                        );
+                      },
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),

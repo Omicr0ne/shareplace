@@ -38,6 +38,20 @@ class MyDealStatusChip extends StatelessWidget {
       );
     }
 
+    if (deal.progress == MyDealProgress.rejected) {
+      return const _DealStatusView(
+        icon: Icons.block_outlined,
+        label: 'Refusé',
+      );
+    }
+
+    if (deal.progress == MyDealProgress.cancelled) {
+      return const _DealStatusView(
+        icon: Icons.cancel_outlined,
+        label: 'Annulé',
+      );
+    }
+
     if (deal.role == MyDealRole.seller) {
       final pluralSuffix = deal.interestedCount > 1 ? 's' : '';
       return _DealStatusView(

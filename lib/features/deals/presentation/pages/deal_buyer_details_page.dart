@@ -29,7 +29,7 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
 
   String? _currentProfileId;
   bool _isInterested = false;
-  int _selectedQuantity = 1;
+  DealApplicationStatus? _applicationStatus;
   bool _isLoadingInterest = true;
   bool _isSubmittingInterest = false;
 
@@ -58,7 +58,6 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
         await widget.dealRepository.addApplication(
           dealId: widget.deal.id,
           applicantProfileId: _currentProfileId!,
-          quantity: _selectedQuantity,
         );
       }
     } on Object {
@@ -80,6 +79,7 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
     }
     setState(() {
       _isInterested = !_isInterested;
+      _applicationStatus = _isInterested ? null : DealApplicationStatus.pending;
       _isSubmittingInterest = false;
     });
   }
@@ -97,16 +97,24 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
         });
         return;
       }
-      final isInterested = await widget.dealRepository.hasApplication(
-        dealId: widget.deal.id,
-        applicantProfileId: profileId,
-      );
+      final applications = await widget.dealRepository
+          .getApplicationsByApplicantProfileId(profileId);
+      final application = applications
+          .cast<DealApplicationRecord?>()
+          .firstWhere(
+            (application) => application?.dealId == widget.deal.id,
+            orElse: () => null,
+          );
+      final isInterested =
+          application?.status == DealApplicationStatus.pending ||
+          application?.status == DealApplicationStatus.accepted;
       if (!mounted) {
         return;
       }
       setState(() {
         _currentProfileId = profileId;
         _isInterested = isInterested;
+        _applicationStatus = application?.status;
         _isLoadingInterest = false;
       });
     } on Object {
@@ -131,9 +139,7 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
     final maxAvailable = deal.maxWinnerCount;
     final isFood = deal.isFoodSupply;
 
-    final interestText = _isInterested
-        ? 'Je ne suis plus intéressé'
-        : 'Je suis intéressé';
+    final interestText = _interestButtonText;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EF),
@@ -311,47 +317,14 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
-                  // ── Sélecteur de quantité ────────────────────────────────
-                  if (maxAvailable > 1 && !_isInterested) ...[
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        const Text(
-                          'Quantité souhaitée :',
-                          style: TextStyle(
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF3E2723),
-                          ),
-                        ),
-                        DropdownButton<int>(
-                          value: _selectedQuantity,
-                          dropdownColor: const Color(0xFFF7F4EF),
-                          items: List.generate(maxAvailable, (i) => i + 1)
-                              .map(
-                                (qty) => DropdownMenuItem(
-                                  value: qty,
-                                  child: Text('$qty'),
-                                ),
-                              )
-                              .toList(),
-                          onChanged: (value) {
-                            if (value != null) {
-                              setState(() {
-                                _selectedQuantity = value;
-                              });
-                            }
-                          },
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                  ],
                   // ── Bouton intérêt ───────────────────────────────────────
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: (_isLoadingInterest || _isSubmittingInterest)
+                      onPressed:
+                          (_isLoadingInterest || _isSubmittingInterest) ||
+                              !_canToggleInterest
                           ? null
                           : _toggleInterest,
                       style: ElevatedButton.styleFrom(
@@ -364,11 +337,7 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
                         ),
                         elevation: 3,
                       ),
-                      child: Text(
-                        _isInterested
-                            ? interestText
-                            : '$interestText ($_selectedQuantity)',
-                      ),
+                      child: Text(interestText),
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -387,5 +356,21 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
         ),
       ),
     );
+  }
+
+  String get _interestButtonText {
+    return switch (_applicationStatus) {
+      DealApplicationStatus.accepted => 'Demande acceptée',
+      DealApplicationStatus.rejected => 'Demande refusée',
+      DealApplicationStatus.cancelled => 'Je suis intéressé',
+      DealApplicationStatus.pending => 'Je ne suis plus intéressé',
+      null => 'Je suis intéressé',
+    };
+  }
+
+  bool get _canToggleInterest {
+    return _applicationStatus == null ||
+        _applicationStatus == DealApplicationStatus.pending ||
+        _applicationStatus == DealApplicationStatus.cancelled;
   }
 }

@@ -7,6 +7,8 @@ import 'package:shareplace/features/deals/data/repositories/deal_repository.dart
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/entities/my_deal_summary.dart';
+import 'package:shareplace/features/deals/presentation/pages/deal_buyer_details_page.dart';
+import 'package:shareplace/features/deals/presentation/pages/deal_seller_details_page.dart';
 import 'package:shareplace/features/deals/presentation/widgets/my_deal_card.dart';
 import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
@@ -74,7 +76,10 @@ class _MyDealsPageState extends State<MyDealsPage> {
                   const _EmptyMyDealsState()
                 else
                   for (final deal in visibleDeals) ...[
-                    MyDealCard(deal: deal),
+                    MyDealCard(
+                      deal: deal,
+                      onImageTap: () => _openDealDetails(deal),
+                    ),
                     const SizedBox(height: 16),
                   ],
               ],
@@ -101,6 +106,8 @@ class _MyDealsPageState extends State<MyDealsPage> {
       }
 
       final deals = await _dealRepository.getBySellerProfileId(profile.id);
+      final myApplications = await _dealRepository
+          .getApplicationsByApplicantProfileId(profile.id);
       var interestedCountByDeal = const <String, int>{};
       try {
         interestedCountByDeal = await _dealRepository
@@ -115,15 +122,28 @@ class _MyDealsPageState extends State<MyDealsPage> {
         return;
       }
 
+      final interestedDeals = <MyDealSummary>[];
+      for (final application in myApplications) {
+        try {
+          final deal = await _dealRepository.getById(application.dealId);
+          if (deal.sellerProfileId == profile.id) {
+            continue;
+          }
+          interestedDeals.add(_toInterestedSummary(deal, application));
+        } on Object {
+          continue;
+        }
+      }
+
       setState(() {
-        _loadedDeals = deals
-            .map(
-              (deal) => _toSellerSummary(
-                deal,
-                interestedCount: interestedCountByDeal[deal.id] ?? 0,
-              ),
-            )
-            .toList(growable: false);
+        _loadedDeals = [
+          for (final deal in deals)
+            _toSellerSummary(
+              deal,
+              interestedCount: interestedCountByDeal[deal.id] ?? 0,
+            ),
+          ...interestedDeals,
+        ];
       });
     } on Object catch (error) {
       if (!mounted) {
@@ -147,6 +167,62 @@ class _MyDealsPageState extends State<MyDealsPage> {
       coverImageUrl: _fallbackCoverImageUrl,
       interestedCount: interestedCount,
     );
+  }
+
+  MyDealSummary _toInterestedSummary(
+    Deal deal,
+    DealApplicationRecord application,
+  ) {
+    return MyDealSummary(
+      id: deal.id,
+      role: MyDealRole.interested,
+      progress: _progressForApplication(application.status),
+      title: deal.title,
+      description: deal.description,
+      coverImageUrl: _fallbackCoverImageUrl,
+    );
+  }
+
+  MyDealProgress _progressForApplication(DealApplicationStatus status) {
+    return switch (status) {
+      DealApplicationStatus.pending => MyDealProgress.pending,
+      DealApplicationStatus.accepted => MyDealProgress.sold,
+      DealApplicationStatus.rejected => MyDealProgress.rejected,
+      DealApplicationStatus.cancelled => MyDealProgress.cancelled,
+    };
+  }
+
+  Future<void> _openDealDetails(MyDealSummary summary) async {
+    try {
+      final profile = await _profileRepository.getCurrentProfile();
+      final deal = await _dealRepository.getById(summary.id);
+      if (!mounted) {
+        return;
+      }
+
+      final page = deal.sellerProfileId == profile?.id
+          ? DealSellerDetailsPage(
+              deal: deal,
+              dealRepository: _dealRepository,
+              profileRepository: _profileRepository,
+            )
+          : DealBuyerDetailsPage(
+              deal: deal,
+              dealRepository: _dealRepository,
+              profileRepository: _profileRepository,
+            );
+
+      await Navigator.of(
+        context,
+      ).push(MaterialPageRoute<void>(builder: (context) => page));
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text("Impossible d'ouvrir l'offre.")),
+      );
+    }
   }
 
   void _goHome(BuildContext context) {

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 
 void main() {
@@ -75,6 +76,20 @@ void main() {
         ),
         throwsArgumentError,
       );
+    });
+  });
+
+  group('DealApplicationRecord', () {
+    test('stores application status', () {
+      final record = DealApplicationRecord(
+        id: 'application-id',
+        dealId: 'deal-id',
+        applicantProfileId: 'buyer-id',
+        status: DealApplicationStatus.accepted,
+        createdAt: DateTime.parse('2026-01-01T09:00:00.000Z'),
+      );
+
+      expect(record.status, DealApplicationStatus.accepted);
     });
   });
 }

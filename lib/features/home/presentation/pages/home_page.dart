@@ -2,11 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/features/auth/data/auth_service.dart';
 import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_buyer_details_page.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_seller_details_page.dart';
+import 'package:shareplace/features/profile/presentation/widgets/profile_logout_button.dart';
 import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 
@@ -18,6 +20,7 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
+  final _authService = AuthService();
   late final ProfileRepository _profileRepository;
   late final DealRepository _dealRepository;
   Future<_HomeData>? _homeDataFuture;
@@ -207,6 +210,11 @@ class _HomePageState extends State<HomePage> {
                 );
               },
             ),
+            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: ProfileLogoutButton(onPressed: _showSignOutConfirmation),
+            ),
           ],
         ),
       ),
@@ -304,6 +312,52 @@ class _HomePageState extends State<HomePage> {
   static void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('En développement.')),
+    );
+  }
+
+  Future<void> _showSignOutConfirmation() {
+    return showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Text('Déconnexion'),
+          content: const Text('Confirmer la déconnexion ?'),
+          actions: [
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: Colors.black,
+                side: const BorderSide(),
+              ),
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Annuler'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: Theme.of(context).colorScheme.error,
+                foregroundColor: Theme.of(context).colorScheme.onError,
+              ),
+              onPressed: () {
+                Navigator.of(context).pop();
+                unawaited(_signOut());
+              },
+              child: const Text('Confirmer'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _signOut() async {
+    await _authService.signOut();
+    if (!mounted) {
+      return;
+    }
+
+    unawaited(
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.signIn, (_) => false),
     );
   }
 }

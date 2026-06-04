@@ -106,6 +106,9 @@ class SupabaseDealRepository implements DealRepository {
     final rows = await getApplicationsByDealIds(dealIds);
     final counts = <String, int>{for (final id in dealIds) id: 0};
     for (final row in rows) {
+      if (row.status != DealApplicationStatus.pending) {
+        continue;
+      }
       counts.update(row.dealId, (current) => current + 1, ifAbsent: () => 1);
     }
     return counts;
@@ -139,6 +142,7 @@ class SupabaseDealRepository implements DealRepository {
       await client.from(_applicationsTable).insert({
         'deal_id': dealId,
         applicantColumn: applicantProfileId,
+        'status': DealApplicationStatus.pending.name,
         'quantity': quantity,
       });
       return;
@@ -146,8 +150,52 @@ class SupabaseDealRepository implements DealRepository {
       await client.from(_applicationsTable).insert({
         'deal_id': dealId,
         applicantColumn: applicantProfileId,
+        'status': DealApplicationStatus.pending.name,
       });
     }
+  }
+
+  @override
+  Future<void> acceptApplication(String applicationId) async {
+    final client = _requireClient();
+    final response = await client
+        .from(_applicationsTable)
+        .update({'status': DealApplicationStatus.accepted.name})
+        .eq('id', applicationId)
+        .select('deal_id')
+        .single();
+    final dealId = response['deal_id'] as String?;
+    if (dealId == null || dealId.isEmpty) {
+      return;
+    }
+
+    final deal = await getById(dealId);
+    final acceptedRows = await client
+        .from(_applicationsTable)
+        .select('id')
+        .eq('deal_id', dealId)
+        .eq('status', DealApplicationStatus.accepted.name);
+    if (acceptedRows.length < deal.maxWinnerCount) {
+      return;
+    }
+
+    await client
+        .from('deals')
+        .update({'state': DealState.closed.name})
+        .eq('id', dealId);
+    await client
+        .from(_applicationsTable)
+        .update({'status': DealApplicationStatus.rejected.name})
+        .eq('deal_id', dealId)
+        .eq('status', DealApplicationStatus.pending.name);
+  }
+
+  @override
+  Future<void> rejectApplication(String applicationId) async {
+    await _requireClient()
+        .from(_applicationsTable)
+        .update({'status': DealApplicationStatus.rejected.name})
+        .eq('id', applicationId);
   }
 
   @override
@@ -173,7 +221,7 @@ class SupabaseDealRepository implements DealRepository {
     final applicantColumn = await _resolveApplicantColumn();
     final response = await _requireClient()
         .from(_applicationsTable)
-        .select('id,deal_id,created_at,$applicantColumn')
+        .select('id,deal_id,created_at,status,$applicantColumn')
         .inFilter('deal_id', dealIds)
         .order('created_at', ascending: false);
     return _parseApplicationRows(response, applicantColumn: applicantColumn);
@@ -186,7 +234,7 @@ class SupabaseDealRepository implements DealRepository {
     final applicantColumn = await _resolveApplicantColumn();
     final response = await _requireClient()
         .from(_applicationsTable)
-        .select('id,deal_id,created_at,$applicantColumn')
+        .select('id,deal_id,created_at,status,$applicantColumn')
         .eq(applicantColumn, applicantProfileId)
         .order('created_at', ascending: false);
     return _parseApplicationRows(response, applicantColumn: applicantColumn);
@@ -203,6 +251,7 @@ class SupabaseDealRepository implements DealRepository {
             id: row['id'] as String? ?? '',
             dealId: row['deal_id'] as String? ?? '',
             applicantProfileId: row[applicantColumn] as String? ?? '',
+            status: _applicationStatusFromJson(row['status']),
             createdAt: _toDateTime(row['created_at']) ?? DateTime.now(),
           ),
         )
@@ -246,4 +295,12 @@ DateTime? _toDateTime(Object? value) {
     return value;
   }
   return DateTime.tryParse(value as String);
+}
+
+DealApplicationStatus _applicationStatusFromJson(Object? value) {
+  final name = value as String? ?? DealApplicationStatus.pending.name;
+  return DealApplicationStatus.values.firstWhere(
+    (status) => status.name == name,
+    orElse: () => DealApplicationStatus.pending,
+  );
 }

@@ -5,22 +5,40 @@ import 'package:shareplace/core/widgets/share_button.dart';
 import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/presentation/widgets/deal_image_carousel.dart';
+import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
+import 'package:shareplace/features/profiles/domain/entities/profile.dart';
 
 class DealSellerDetailsPage extends StatefulWidget {
   const DealSellerDetailsPage({
     required this.deal,
     required this.dealRepository,
+    this.profileRepository,
     super.key,
   });
 
   final Deal deal;
   final DealRepository dealRepository;
+  final ProfileRepository? profileRepository;
 
   @override
   State<DealSellerDetailsPage> createState() => _DealSellerDetailsPageState();
 }
 
 class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
+  late final ProfileRepository _profileRepository;
+  List<_ApplicationView>? _applications;
+  Object? _applicationsError;
+  bool _isUpdatingApplication = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileRepository =
+        widget.profileRepository ?? SupabaseProfileRepository();
+    unawaited(_loadApplications());
+  }
+
   String _shareText(Deal deal) {
     return 'Découvrez cette annonce sur SharePlace : ${deal.title}\n'
         'Code postal : ${deal.postalCode}\n\n'
@@ -60,6 +78,74 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
     if (!mounted) return;
 
     Navigator.pop(context, true);
+  }
+
+  Future<void> _loadApplications() async {
+    try {
+      final applications = await widget.dealRepository.getApplicationsByDealIds(
+        [widget.deal.id],
+      );
+      final views = <_ApplicationView>[];
+      for (final application in applications) {
+        try {
+          final profile = await _profileRepository.getById(
+            application.applicantProfileId,
+          );
+          views.add(
+            _ApplicationView(application: application, profile: profile),
+          );
+        } on Object {
+          views.add(_ApplicationView(application: application));
+        }
+      }
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _applications = views;
+        _applicationsError = null;
+      });
+    } on Object catch (error) {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _applicationsError = error;
+      });
+    }
+  }
+
+  Future<void> _decideApplication(
+    DealApplicationRecord application, {
+    required bool accept,
+  }) async {
+    if (_isUpdatingApplication) {
+      return;
+    }
+    setState(() {
+      _isUpdatingApplication = true;
+    });
+    try {
+      if (accept) {
+        await widget.dealRepository.acceptApplication(application.id);
+      } else {
+        await widget.dealRepository.rejectApplication(application.id);
+      }
+      await _loadApplications();
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Impossible de traiter la demande.')),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isUpdatingApplication = false;
+        });
+      }
+    }
   }
 
   @override
@@ -251,6 +337,20 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                       child: const Text("Supprimer l'annonce"),
                     ),
                   ),
+                  const SizedBox(height: 24),
+                  _ApplicationsSection(
+                    applications: _applications,
+                    hasError: _applicationsError != null,
+                    isUpdating: _isUpdatingApplication,
+                    onAccept: (application) => _decideApplication(
+                      application,
+                      accept: true,
+                    ),
+                    onReject: (application) => _decideApplication(
+                      application,
+                      accept: false,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -258,5 +358,154 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
         ),
       ),
     );
+  }
+}
+
+class _ApplicationsSection extends StatelessWidget {
+  const _ApplicationsSection({
+    required this.applications,
+    required this.hasError,
+    required this.isUpdating,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  final List<_ApplicationView>? applications;
+  final bool hasError;
+  final bool isUpdating;
+  final ValueChanged<DealApplicationRecord> onAccept;
+  final ValueChanged<DealApplicationRecord> onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Acheteurs intéressés',
+          style: TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
+            color: Color(0xFF3E2723),
+          ),
+        ),
+        const SizedBox(height: 12),
+        if (hasError)
+          const Text('Impossible de charger les demandes.')
+        else if (applications == null)
+          const Center(child: CircularProgressIndicator())
+        else if (applications!.isEmpty)
+          const Text('Aucun acheteur intéressé pour le moment.')
+        else
+          for (final view in applications!) ...[
+            _ApplicationTile(
+              view: view,
+              isUpdating: isUpdating,
+              onAccept: onAccept,
+              onReject: onReject,
+            ),
+            const SizedBox(height: 10),
+          ],
+      ],
+    );
+  }
+}
+
+class _ApplicationTile extends StatelessWidget {
+  const _ApplicationTile({
+    required this.view,
+    required this.isUpdating,
+    required this.onAccept,
+    required this.onReject,
+  });
+
+  final _ApplicationView view;
+  final bool isUpdating;
+  final ValueChanged<DealApplicationRecord> onAccept;
+  final ValueChanged<DealApplicationRecord> onReject;
+
+  @override
+  Widget build(BuildContext context) {
+    final application = view.application;
+    final isPending = application.status == DealApplicationStatus.pending;
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: const Color(0xFFFFCC80)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.all(12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              view.displayName,
+              style: const TextStyle(
+                fontWeight: FontWeight.w800,
+                color: Color(0xFF3E2723),
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _statusLabel(application.status),
+              style: const TextStyle(color: Color(0xFF6D4C41)),
+            ),
+            if (isPending) ...[
+              const SizedBox(height: 10),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: isUpdating
+                          ? null
+                          : () => onReject(application),
+                      child: const Text('Refuser'),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: isUpdating
+                          ? null
+                          : () => onAccept(application),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: const Color(0xFFEF6C00),
+                        foregroundColor: Colors.white,
+                      ),
+                      child: const Text('Accepter'),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _statusLabel(DealApplicationStatus status) {
+    return switch (status) {
+      DealApplicationStatus.pending => 'En attente de décision',
+      DealApplicationStatus.accepted => 'Acceptée',
+      DealApplicationStatus.rejected => 'Refusée',
+      DealApplicationStatus.cancelled => 'Annulée',
+    };
+  }
+}
+
+class _ApplicationView {
+  const _ApplicationView({required this.application, this.profile});
+
+  final DealApplicationRecord application;
+  final Profile? profile;
+
+  String get displayName {
+    final profile = this.profile;
+    if (profile == null) {
+      return 'Acheteur';
+    }
+    return '${profile.firstName} ${profile.lastName}';
   }
 }

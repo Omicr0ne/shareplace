@@ -10,6 +10,35 @@ import 'package:shareplace/features/profiles/data/repositories/profile_repositor
 import 'package:shareplace/features/profiles/domain/entities/profile.dart';
 
 void main() {
+  testWidgets('loads tag labels from repository', (tester) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CreateDealPage(
+          dealRepository: _FakeDealRepository(),
+          profileRepository: const _FakeProfileRepository(
+            profile: Profile(
+              id: 'current-profile-id',
+              firstName: 'Lina',
+              lastName: 'Martin',
+            ),
+          ),
+          dealTagRepository: _FakeDealTagRepository(
+            availableTags: ['Livre', 'Velo'],
+          ),
+          initialProductImages: [_transparentPng],
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Livre'), findsOneWidget);
+    expect(find.text('Velo'), findsOneWidget);
+  });
+
   testWidgets('creates a deal with current profile as author and tags', (
     tester,
   ) async {
@@ -164,6 +193,9 @@ class _FakeDealRepository implements DealRepository {
   }) async {}
 
   @override
+  Future<void> acceptApplication(String applicationId) async {}
+
+  @override
   Future<void> cancel(String id) async {}
 
   @override
@@ -211,6 +243,9 @@ class _FakeDealRepository implements DealRepository {
   }
 
   @override
+  Future<void> rejectApplication(String applicationId) async {}
+
+  @override
   Future<void> removeApplication({
     required String dealId,
     required String applicantProfileId,
@@ -221,8 +256,16 @@ class _FakeDealRepository implements DealRepository {
 }
 
 class _FakeDealTagRepository implements DealTagRepository {
+  _FakeDealTagRepository({
+    this.availableTags = const ['Maison', 'Déco', 'Cuisine', 'Jardin'],
+  });
+
+  final List<String> availableTags;
   String? createdDealId;
   List<String>? createdTags;
+
+  @override
+  Future<List<String>> getAvailableTags() async => availableTags;
 
   @override
   Future<void> setTagsForDeal(String dealId, List<String> tags) async {

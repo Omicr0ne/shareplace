@@ -44,6 +44,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
   bool _showImageError = false;
   bool _isFoodSupply = false;
   bool _isSubmitting = false;
+  List<String>? _availableTags;
 
   late final ProfileRepository _profileRepository =
       widget.profileRepository ?? SupabaseProfileRepository();
@@ -56,6 +57,27 @@ class _CreateDealPageState extends State<CreateDealPage> {
     _productImages.addAll(
       widget.initialProductImages.take(DealImageCarousel.maxImages),
     );
+    unawaited(_loadAvailableTags());
+  }
+
+  Future<void> _loadAvailableTags() async {
+    try {
+      final tags = await _dealTagRepository.getAvailableTags();
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _availableTags = tags;
+      });
+    } on Object catch (error) {
+      debugPrint('Erreur lors du chargement des tags : $error');
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _availableTags = const [];
+      });
+    }
   }
 
   @override
@@ -417,25 +439,14 @@ class _CreateDealPageState extends State<CreateDealPage> {
                       initialValue: _selectedTag,
                       isExpanded: true,
                       decoration: _inputDecoration('Tags'),
-                      items: const [
-                        DropdownMenuItem(
-                          value: 'Maison',
-                          child: Text('Maison'),
-                        ),
-                        DropdownMenuItem(value: 'Déco', child: Text('Déco')),
-                        DropdownMenuItem(
-                          value: 'Cuisine',
-                          child: Text('Cuisine'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Jardin',
-                          child: Text('Jardin'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Alimentaire',
-                          child: Text('Alimentaire'),
-                        ),
-                      ],
+                      items: (_availableTags ?? const <String>[])
+                          .map(
+                            (tag) => DropdownMenuItem(
+                              value: tag,
+                              child: Text(tag),
+                            ),
+                          )
+                          .toList(growable: false),
                       onChanged: (value) {
                         if (value == null || _tags.contains(value)) return;
                         setState(() {

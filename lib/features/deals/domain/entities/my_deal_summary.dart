@@ -6,6 +6,8 @@ enum MyDealRole {
 enum MyDealProgress {
   pending,
   sold,
+  rejected,
+  cancelled,
 }
 
 class MyDealSummary {
