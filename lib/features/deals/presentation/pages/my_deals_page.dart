@@ -105,15 +105,17 @@ class _MyDealsPageState extends State<MyDealsPage> {
       }
 
       // ── Chargement des deals du vendeur ──────────────────────────────────
-      final sellerDeals =
-          await _dealRepository.getBySellerProfileId(profile.id);
+      final sellerDeals = await _dealRepository.getBySellerProfileId(
+        profile.id,
+      );
 
       // Nombre de candidats par deal (pour l'affichage vendeur)
       var interestedCountByDeal = const <String, int>{};
       try {
-        interestedCountByDeal = await _dealRepository.countApplicationsByDealIds(
-          sellerDeals.map((d) => d.id).toList(growable: false),
-        );
+        interestedCountByDeal = await _dealRepository
+            .countApplicationsByDealIds(
+              sellerDeals.map((d) => d.id).toList(growable: false),
+            );
       } on Object {
         interestedCountByDeal = const {};
       }
@@ -122,11 +124,13 @@ class _MyDealsPageState extends State<MyDealsPage> {
       final Map<String, List<String>> acceptedPhonesByDeal = {};
       if (sellerDeals.isNotEmpty) {
         try {
-          final allApplications = await _dealRepository.getApplicationsByDealIds(
-            sellerDeals.map((d) => d.id).toList(growable: false),
+          final allApplications = await _dealRepository
+              .getApplicationsByDealIds(
+                sellerDeals.map((d) => d.id).toList(growable: false),
+              );
+          final accepted = allApplications.where(
+            (a) => a.status == DealApplicationStatus.accepted,
           );
-          final accepted = allApplications
-              .where((a) => a.status == DealApplicationStatus.accepted);
           for (final application in accepted) {
             try {
               final buyerProfile = await _profileRepository.getById(

@@ -124,22 +124,25 @@ class MyDealCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     // Vendeur : plusieurs numéros possibles (séparés par ", ")
                     if (deal.role == MyDealRole.seller)
-                      ...deal.counterpartPhone!.split(', ').map(
-                        (phone) => Padding(
-                          padding: const EdgeInsets.only(top: 2),
-                          child: Text(
-                            phone,
-                            style: Theme.of(context).textTheme.bodyMedium
-                                ?.copyWith(fontWeight: FontWeight.w700),
-                          ),
-                        ),
-                      )
+                      ...deal.counterpartPhone!
+                          .split(', ')
+                          .map(
+                            (phone) => Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                phone,
+                                style: Theme.of(context).textTheme.bodyMedium
+                                    ?.copyWith(fontWeight: FontWeight.w700),
+                              ),
+                            ),
+                          )
                     // Acheteur : un seul numéro
                     else
                       Text(
                         deal.counterpartPhone!,
-                        style: Theme.of(context).textTheme.bodyMedium
-                            ?.copyWith(fontWeight: FontWeight.w700),
+                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                   ],
                 ),
