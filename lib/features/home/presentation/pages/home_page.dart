@@ -3,14 +3,14 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
 import 'package:shareplace/features/auth/data/auth_service.dart';
-import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
+import 'package:shareplace/features/deals/domain/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_buyer_details_page.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_seller_details_page.dart';
-import 'package:shareplace/features/profile/presentation/widgets/profile_logout_button.dart';
-import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
+import 'package:shareplace/features/profiles/domain/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/presentation/widgets/profile_logout_button.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});

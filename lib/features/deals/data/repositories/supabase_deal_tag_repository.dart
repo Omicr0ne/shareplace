@@ -1,4 +1,4 @@
-import 'package:shareplace/features/deals/data/repositories/deal_tag_repository.dart';
+import 'package:shareplace/features/deals/domain/repositories/deal_tag_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseDealTagRepository implements DealTagRepository {
@@ -25,6 +25,7 @@ class SupabaseDealTagRepository implements DealTagRepository {
     final response = await _requireClient()
         .from('tags')
         .select('label')
+        .eq('state', 'approved')
         .order('label');
 
     return response
@@ -43,7 +44,8 @@ class SupabaseDealTagRepository implements DealTagRepository {
     final tagRows = await client
         .from('tags')
         .select('id,label')
-        .inFilter('label', uniqueTags);
+        .inFilter('label', uniqueTags)
+        .eq('state', 'approved');
 
     final tagIdsByName = {
       for (final row in tagRows) row['label']! as String: row['id']! as String,

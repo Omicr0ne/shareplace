@@ -5,9 +5,9 @@ import 'package:shareplace/app/app_routes.dart';
 import 'package:shareplace/features/auth/data/auth_error_messages.dart';
 import 'package:shareplace/features/auth/data/auth_service.dart';
 import 'package:shareplace/features/auth/presentation/pages/sign_up_success_page.dart';
-import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 import 'package:shareplace/features/profiles/domain/entities/profile.dart';
+import 'package:shareplace/features/profiles/domain/repositories/profile_repository.dart';
 
 class SignUpPage extends StatefulWidget {
   const SignUpPage({

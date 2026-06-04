@@ -1,6 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
+import 'package:shareplace/features/deals/domain/entities/deal_application.dart';
 
 void main() {
   group('Deal', () {

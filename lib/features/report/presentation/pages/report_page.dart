@@ -1,9 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 import 'package:shareplace/features/profiles/domain/entities/profile.dart';
+import 'package:shareplace/features/profiles/domain/repositories/profile_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class ReportPage extends StatefulWidget {

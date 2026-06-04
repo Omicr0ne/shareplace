@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/features/profile/presentation/pages/profile_page.dart';
-import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
 import 'package:shareplace/features/profiles/domain/entities/profile.dart';
+import 'package:shareplace/features/profiles/domain/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/presentation/pages/profile_page.dart';
 
 void main() {
   const testProfile = Profile(

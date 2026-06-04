@@ -2,13 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
+import 'package:shareplace/features/deals/domain/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_buyer_details_page.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_seller_details_page.dart';
-import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
+import 'package:shareplace/features/profiles/domain/repositories/profile_repository.dart';
 
 class ShareplaceNotification {
   const ShareplaceNotification({

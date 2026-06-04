@@ -6,14 +6,14 @@ import 'package:image_picker/image_picker.dart';
 import 'package:shareplace/app/app_routes.dart';
 import 'package:shareplace/core/widgets/app_header.dart';
 import 'package:shareplace/features/auth/data/auth_service.dart';
-import 'package:shareplace/features/profile/presentation/widgets/profile_avatar.dart';
-import 'package:shareplace/features/profile/presentation/widgets/profile_description_field.dart';
-import 'package:shareplace/features/profile/presentation/widgets/profile_identity_fields.dart';
-import 'package:shareplace/features/profile/presentation/widgets/profile_logout_button.dart';
-import 'package:shareplace/features/profile/presentation/widgets/profile_verification_button.dart';
-import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 import 'package:shareplace/features/profiles/domain/entities/profile.dart';
+import 'package:shareplace/features/profiles/domain/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/presentation/widgets/profile_avatar.dart';
+import 'package:shareplace/features/profiles/presentation/widgets/profile_description_field.dart';
+import 'package:shareplace/features/profiles/presentation/widgets/profile_identity_fields.dart';
+import 'package:shareplace/features/profiles/presentation/widgets/profile_logout_button.dart';
+import 'package:shareplace/features/profiles/presentation/widgets/profile_verification_button.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({

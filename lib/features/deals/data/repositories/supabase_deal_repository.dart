@@ -1,5 +1,6 @@
-import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
+import 'package:shareplace/features/deals/domain/entities/deal_application.dart';
+import 'package:shareplace/features/deals/domain/repositories/deal_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 class SupabaseDealRepository implements DealRepository {
@@ -8,11 +9,6 @@ class SupabaseDealRepository implements DealRepository {
   const SupabaseDealRepository._(this._client);
 
   static const _applicationsTable = 'deal_applications';
-  static const _applicantColumns = [
-    'applicant_profile_id',
-    'profile_id',
-    'applicant_id',
-  ];
 
   final SupabaseClient? _client;
 
@@ -119,12 +115,16 @@ class SupabaseDealRepository implements DealRepository {
     required String dealId,
     required String applicantProfileId,
   }) async {
-    final applicantColumn = await _resolveApplicantColumn();
     final response = await _requireClient()
         .from(_applicationsTable)
         .select('id')
         .eq('deal_id', dealId)
-        .eq(applicantColumn, applicantProfileId)
+        .eq('applicant_profile_id', applicantProfileId)
+        .inFilter('status', [
+          DealApplicationStatus.pending.name,
+          DealApplicationStatus.accepted.name,
+          DealApplicationStatus.rejected.name,
+        ])
         .limit(1)
         .maybeSingle();
     return response != null;
@@ -137,11 +137,10 @@ class SupabaseDealRepository implements DealRepository {
     int quantity = 1,
   }) async {
     final client = _requireClient();
-    final applicantColumn = await _resolveApplicantColumn();
     try {
       await client.from(_applicationsTable).insert({
         'deal_id': dealId,
-        applicantColumn: applicantProfileId,
+        'applicant_profile_id': applicantProfileId,
         'status': DealApplicationStatus.pending.name,
         'quantity': quantity,
       });
@@ -149,7 +148,7 @@ class SupabaseDealRepository implements DealRepository {
     } on PostgrestException {
       await client.from(_applicationsTable).insert({
         'deal_id': dealId,
-        applicantColumn: applicantProfileId,
+        'applicant_profile_id': applicantProfileId,
         'status': DealApplicationStatus.pending.name,
       });
     }
@@ -203,12 +202,15 @@ class SupabaseDealRepository implements DealRepository {
     required String dealId,
     required String applicantProfileId,
   }) async {
-    final applicantColumn = await _resolveApplicantColumn();
     await _requireClient()
         .from(_applicationsTable)
-        .delete()
+        .update({
+          'status': DealApplicationStatus.cancelled.name,
+          'cancelled_at': DateTime.now().toUtc().toIso8601String(),
+        })
         .eq('deal_id', dealId)
-        .eq(applicantColumn, applicantProfileId);
+        .eq('applicant_profile_id', applicantProfileId)
+        .eq('status', DealApplicationStatus.pending.name);
   }
 
   @override
@@ -218,39 +220,34 @@ class SupabaseDealRepository implements DealRepository {
     if (dealIds.isEmpty) {
       return const [];
     }
-    final applicantColumn = await _resolveApplicantColumn();
     final response = await _requireClient()
         .from(_applicationsTable)
-        .select('id,deal_id,created_at,status,$applicantColumn')
+        .select('id,deal_id,created_at,status,applicant_profile_id')
         .inFilter('deal_id', dealIds)
         .order('created_at', ascending: false);
-    return _parseApplicationRows(response, applicantColumn: applicantColumn);
+    return _parseApplicationRows(response);
   }
 
   @override
   Future<List<DealApplicationRecord>> getApplicationsByApplicantProfileId(
     String applicantProfileId,
   ) async {
-    final applicantColumn = await _resolveApplicantColumn();
     final response = await _requireClient()
         .from(_applicationsTable)
-        .select('id,deal_id,created_at,status,$applicantColumn')
-        .eq(applicantColumn, applicantProfileId)
+        .select('id,deal_id,created_at,status,applicant_profile_id')
+        .eq('applicant_profile_id', applicantProfileId)
         .order('created_at', ascending: false);
-    return _parseApplicationRows(response, applicantColumn: applicantColumn);
+    return _parseApplicationRows(response);
   }
 
-  List<DealApplicationRecord> _parseApplicationRows(
-    dynamic response, {
-    required String applicantColumn,
-  }) {
+  List<DealApplicationRecord> _parseApplicationRows(dynamic response) {
     final rows = (response as List<dynamic>).cast<Map<String, dynamic>>();
     return rows
         .map(
           (row) => DealApplicationRecord(
             id: row['id'] as String? ?? '',
             dealId: row['deal_id'] as String? ?? '',
-            applicantProfileId: row[applicantColumn] as String? ?? '',
+            applicantProfileId: row['applicant_profile_id'] as String? ?? '',
             status: _applicationStatusFromJson(row['status']),
             createdAt: _toDateTime(row['created_at']) ?? DateTime.now(),
           ),
@@ -259,22 +256,6 @@ class SupabaseDealRepository implements DealRepository {
           (row) => row.dealId.isNotEmpty && row.applicantProfileId.isNotEmpty,
         )
         .toList(growable: false);
-  }
-
-  Future<String> _resolveApplicantColumn() async {
-    final client = _requireClient();
-    for (final column in _applicantColumns) {
-      try {
-        await client.from(_applicationsTable).select(column).limit(1);
-        return column;
-      } on PostgrestException {
-        continue;
-      }
-    }
-    throw StateError(
-      'Missing applicant profile column in deal_applications. '
-      'Expected one of: ${_applicantColumns.join(', ')}.',
-    );
   }
 
   SupabaseClient _requireClient() {
