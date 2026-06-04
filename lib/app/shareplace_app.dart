@@ -16,7 +16,6 @@ import 'package:shareplace/features/notifications/presentation/pages/notificatio
 import 'package:shareplace/features/profiles/presentation/pages/account_verification_page.dart';
 import 'package:shareplace/features/profiles/presentation/pages/profile_page.dart';
 import 'package:shareplace/features/report/presentation/pages/report_page.dart';
-import 'package:shareplace/features/search/presentation/pages/search_with_filter_page.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
 typedef AuthenticatedCheck = bool Function();
@@ -126,7 +125,6 @@ class SharePlaceApp extends StatelessWidget {
       AppRoutes.signUp => const SignUpPage(),
       AppRoutes.forgotPassword => const ForgotPasswordPage(),
       AppRoutes.studentVerification => const AccountVerificationPage(),
-      AppRoutes.search => const SearchWithFilterPage(),
       AppRoutes.dealHistory => const HistoryPage(),
       _ => null,
     };

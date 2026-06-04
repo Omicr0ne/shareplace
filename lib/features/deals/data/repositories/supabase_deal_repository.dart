@@ -1,5 +1,6 @@
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/entities/deal_application.dart';
+import 'package:shareplace/features/deals/domain/entities/deal_search_filters.dart';
 import 'package:shareplace/features/deals/domain/repositories/deal_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -50,11 +51,50 @@ class SupabaseDealRepository implements DealRepository {
 
   @override
   Future<List<Deal>> getOpenDeals() async {
-    final response = await _requireClient()
+    return searchOpenDeals(const DealSearchFilters());
+  }
+
+  @override
+  Future<List<Deal>> searchOpenDeals(DealSearchFilters filters) async {
+    final tags = filters.tags.where((tag) => tag.trim().isNotEmpty).toList();
+    final selectColumns = tags.isEmpty
+        ? '*'
+        : '*, deal_tags!inner(tags!inner(label,state))';
+    var query = _requireClient()
         .from('deals')
-        .select()
-        .eq('state', DealState.open.name)
-        .order('created_at', ascending: false);
+        .select(selectColumns)
+        .eq('state', DealState.open.name);
+
+    final searchQuery = filters.query?.trim();
+    if (searchQuery != null && searchQuery.isNotEmpty) {
+      final escapedQuery = searchQuery.replaceAll('%', r'\%');
+      final textFilters = [
+        'title.ilike.%$escapedQuery%',
+        'description.ilike.%$escapedQuery%',
+        'postal_code.ilike.%$escapedQuery%',
+      ];
+      query = query.or(
+        textFilters.join(','),
+      );
+    }
+
+    final postalCode = filters.postalCode?.trim();
+    if (postalCode != null && postalCode.isNotEmpty) {
+      query = query.ilike('postal_code', '$postalCode%');
+    }
+
+    final isFoodSupply = filters.isFoodSupply;
+    if (isFoodSupply != null) {
+      query = query.eq('is_food_supply', isFoodSupply);
+    }
+
+    if (tags.isNotEmpty) {
+      query = query
+          .eq('deal_tags.tags.state', 'approved')
+          .inFilter('deal_tags.tags.label', tags);
+    }
+
+    final response = await query.order('created_at', ascending: false);
 
     return response
         .map((json) => Deal.fromJson(Map<String, Object?>.from(json)))

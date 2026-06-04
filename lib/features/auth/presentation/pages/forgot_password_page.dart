@@ -77,16 +77,6 @@ class ForgotPasswordPage extends StatelessWidget {
                       ),
                       child: const Text('Aller a verification du compte'),
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.search,
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFFFFA500),
-                      ),
-                      child: const Text('Aller a la recherche'),
-                    ),
                   ],
                 ),
               ),

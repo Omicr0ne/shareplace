@@ -74,16 +74,6 @@ class AccountVerificationPage extends StatelessWidget {
                       ),
                       child: const Text('Renvoyer le code'),
                     ),
-                    TextButton(
-                      onPressed: () => Navigator.pushNamed(
-                        context,
-                        AppRoutes.search,
-                      ),
-                      style: TextButton.styleFrom(
-                        foregroundColor: const Color(0xFFFFA500),
-                      ),
-                      child: const Text('Aller a la recherche'),
-                    ),
                   ],
                 ),
               ),

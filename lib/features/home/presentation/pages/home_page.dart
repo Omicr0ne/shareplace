@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
 import 'package:shareplace/features/auth/data/auth_service.dart';
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
+import 'package:shareplace/features/deals/data/repositories/supabase_deal_tag_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
+import 'package:shareplace/features/deals/domain/entities/deal_search_filters.dart';
 import 'package:shareplace/features/deals/domain/repositories/deal_repository.dart';
+import 'package:shareplace/features/deals/domain/repositories/deal_tag_repository.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_buyer_details_page.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_seller_details_page.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
@@ -13,7 +16,16 @@ import 'package:shareplace/features/profiles/domain/repositories/profile_reposit
 import 'package:shareplace/features/profiles/presentation/widgets/profile_logout_button.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  const HomePage({
+    this.profileRepository,
+    this.dealRepository,
+    this.dealTagRepository,
+    super.key,
+  });
+
+  final ProfileRepository? profileRepository;
+  final DealRepository? dealRepository;
+  final DealTagRepository? dealTagRepository;
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -21,25 +33,67 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
   final _authService = AuthService();
+  final _searchController = TextEditingController();
+  final _postalCodeController = TextEditingController();
   late final ProfileRepository _profileRepository;
   late final DealRepository _dealRepository;
+  late final DealTagRepository _dealTagRepository;
   Future<_HomeData>? _homeDataFuture;
+  Future<List<String>>? _availableTagsFuture;
+  bool? _isFoodSupplyFilter;
+  List<String> _selectedTags = const [];
 
   @override
   void initState() {
     super.initState();
-    _profileRepository = SupabaseProfileRepository();
-    _dealRepository = SupabaseDealRepository();
+    _profileRepository =
+        widget.profileRepository ?? SupabaseProfileRepository();
+    _dealRepository = widget.dealRepository ?? SupabaseDealRepository();
+    _dealTagRepository =
+        widget.dealTagRepository ?? SupabaseDealTagRepository();
     _homeDataFuture = _loadHomeData();
+    _availableTagsFuture = _loadAvailableTags();
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    _postalCodeController.dispose();
+    super.dispose();
   }
 
   Future<_HomeData> _loadHomeData() async {
     final currentProfile = await _profileRepository.getCurrentProfile();
-    final deals = await _dealRepository.getOpenDeals();
+    final deals = await _dealRepository.searchOpenDeals(
+      DealSearchFilters(
+        query: _searchController.text.trim().isEmpty
+            ? null
+            : _searchController.text.trim(),
+        postalCode: _postalCodeController.text.trim().isEmpty
+            ? null
+            : _postalCodeController.text.trim(),
+        isFoodSupply: _isFoodSupplyFilter,
+        tags: _selectedTags,
+      ),
+    );
     return _HomeData(
       deals: deals,
       currentProfileId: currentProfile?.id,
     );
+  }
+
+  Future<List<String>> _loadAvailableTags() async {
+    try {
+      return await _dealTagRepository.getAvailableTags();
+    } on Object {
+      return const [];
+    }
+  }
+
+  void _reloadDeals() {
+    setState(() {
+      _homeDataFuture = _loadHomeData();
+    });
   }
 
   Future<void> _openAddDealPage() async {
@@ -254,22 +308,14 @@ class _HomePageState extends State<HomePage> {
 
             return Column(
               children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-                  child: TextField(
-                    onTap: () => _showComingSoon(context),
-                    readOnly: true,
-                    decoration: InputDecoration(
-                      hintText: 'Rechercher une offre',
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: Colors.white,
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(16),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
+                _HomeSearchBar(
+                  controller: _searchController,
+                  hasActiveFilters:
+                      _postalCodeController.text.trim().isNotEmpty ||
+                      _isFoodSupplyFilter != null ||
+                      _selectedTags.isNotEmpty,
+                  onSearch: _reloadDeals,
+                  onOpenFilters: _showFilters,
                 ),
                 Expanded(
                   child: GridView.builder(
@@ -309,10 +355,35 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  static void _showComingSoon(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('En développement.')),
+  Future<void> _showFilters() async {
+    final availableTags =
+        await (_availableTagsFuture ?? Future.value(<String>[]));
+    if (!mounted) {
+      return;
+    }
+
+    final result = await showModalBottomSheet<_HomeFilters>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (context) {
+        return _HomeFiltersSheet(
+          availableTags: availableTags,
+          initialPostalCode: _postalCodeController.text,
+          initialIsFoodSupply: _isFoodSupplyFilter,
+          initialTags: _selectedTags,
+        );
+      },
     );
+
+    if (result == null || !mounted) {
+      return;
+    }
+
+    _postalCodeController.text = result.postalCode;
+    _isFoodSupplyFilter = result.isFoodSupply;
+    _selectedTags = result.tags;
+    _reloadDeals();
   }
 
   Future<void> _showSignOutConfirmation() {
@@ -470,4 +541,226 @@ class _HomeData {
 
   final List<Deal> deals;
   final String? currentProfileId;
+}
+
+class _HomeSearchBar extends StatelessWidget {
+  const _HomeSearchBar({
+    required this.controller,
+    required this.hasActiveFilters,
+    required this.onSearch,
+    required this.onOpenFilters,
+  });
+
+  final TextEditingController controller;
+  final bool hasActiveFilters;
+  final VoidCallback onSearch;
+  final VoidCallback onOpenFilters;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              key: const Key('home-search-field'),
+              controller: controller,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => onSearch(),
+              decoration: InputDecoration(
+                hintText: 'Rechercher une offre',
+                prefixIcon: const Icon(Icons.search),
+                suffixIcon: IconButton(
+                  key: const Key('home-search-submit'),
+                  tooltip: 'Rechercher',
+                  onPressed: onSearch,
+                  icon: const Icon(Icons.arrow_forward),
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+          IconButton.filledTonal(
+            key: const Key('home-filter-button'),
+            tooltip: 'Filtres',
+            onPressed: onOpenFilters,
+            icon: Badge(
+              isLabelVisible: hasActiveFilters,
+              child: const Icon(Icons.tune),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HomeFilters {
+  const _HomeFilters({
+    required this.postalCode,
+    required this.isFoodSupply,
+    required this.tags,
+  });
+
+  final String postalCode;
+  final bool? isFoodSupply;
+  final List<String> tags;
+}
+
+class _HomeFiltersSheet extends StatefulWidget {
+  const _HomeFiltersSheet({
+    required this.availableTags,
+    required this.initialPostalCode,
+    required this.initialIsFoodSupply,
+    required this.initialTags,
+  });
+
+  final List<String> availableTags;
+  final String initialPostalCode;
+  final bool? initialIsFoodSupply;
+  final List<String> initialTags;
+
+  @override
+  State<_HomeFiltersSheet> createState() => _HomeFiltersSheetState();
+}
+
+class _HomeFiltersSheetState extends State<_HomeFiltersSheet> {
+  late final TextEditingController _postalCodeController;
+  late bool _onlyFoodSupply;
+  late final Set<String> _selectedTags;
+
+  @override
+  void initState() {
+    super.initState();
+    _postalCodeController = TextEditingController(
+      text: widget.initialPostalCode,
+    );
+    _onlyFoodSupply = widget.initialIsFoodSupply ?? false;
+    _selectedTags = widget.initialTags.toSet();
+  }
+
+  @override
+  void dispose() {
+    _postalCodeController.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      child: Padding(
+        padding: EdgeInsets.fromLTRB(
+          20,
+          0,
+          20,
+          20 + MediaQuery.of(context).viewInsets.bottom,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Filtres',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              key: const Key('home-postal-code-filter'),
+              controller: _postalCodeController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                border: OutlineInputBorder(),
+                labelText: 'Code postal',
+              ),
+            ),
+            const SizedBox(height: 12),
+            SwitchListTile.adaptive(
+              key: const Key('home-food-filter'),
+              contentPadding: EdgeInsets.zero,
+              title: const Text('Afficher uniquement les dons alimentaires'),
+              value: _onlyFoodSupply,
+              onChanged: (value) {
+                setState(() {
+                  _onlyFoodSupply = value;
+                });
+              },
+            ),
+            if (widget.availableTags.isNotEmpty) ...[
+              const SizedBox(height: 8),
+              Text(
+                'Tags',
+                style: Theme.of(context).textTheme.titleMedium,
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: widget.availableTags
+                    .map((tag) {
+                      return FilterChip(
+                        label: Text(tag),
+                        selected: _selectedTags.contains(tag),
+                        onSelected: (selected) {
+                          setState(() {
+                            if (selected) {
+                              _selectedTags.add(tag);
+                            } else {
+                              _selectedTags.remove(tag);
+                            }
+                          });
+                        },
+                      );
+                    })
+                    .toList(growable: false),
+              ),
+            ],
+            const SizedBox(height: 20),
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () {
+                      Navigator.of(context).pop(
+                        const _HomeFilters(
+                          postalCode: '',
+                          isFoodSupply: null,
+                          tags: [],
+                        ),
+                      );
+                    },
+                    child: const Text('Réinitialiser'),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: FilledButton(
+                    key: const Key('home-apply-filters'),
+                    onPressed: () {
+                      Navigator.of(context).pop(
+                        _HomeFilters(
+                          postalCode: _postalCodeController.text.trim(),
+                          isFoodSupply: _onlyFoodSupply ? true : null,
+                          tags: _selectedTags.toList(growable: false),
+                        ),
+                      );
+                    },
+                    child: const Text('Appliquer'),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }

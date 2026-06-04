@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/entities/deal_application.dart';
+import 'package:shareplace/features/deals/domain/entities/deal_search_filters.dart';
 import 'package:shareplace/features/deals/domain/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/domain/repositories/deal_tag_repository.dart';
 import 'package:shareplace/features/deals/presentation/pages/create_deal_page.dart';
@@ -234,6 +235,9 @@ class _FakeDealRepository implements DealRepository {
 
   @override
   Future<List<Deal>> getOpenDeals() async => [];
+
+  @override
+  Future<List<Deal>> searchOpenDeals(DealSearchFilters filters) async => [];
 
   @override
   Future<bool> hasApplication({
