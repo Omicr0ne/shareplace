@@ -101,12 +101,29 @@ class _MyDealsPageState extends State<MyDealsPage> {
       }
 
       final deals = await _dealRepository.getBySellerProfileId(profile.id);
+      var interestedCountByDeal = const <String, int>{};
+      try {
+        interestedCountByDeal = await _dealRepository
+            .countApplicationsByDealIds(
+              deals.map((deal) => deal.id).toList(growable: false),
+            );
+      } on Object {
+        // Keep the page usable even when deal_applications is unavailable.
+        interestedCountByDeal = const {};
+      }
       if (!mounted) {
         return;
       }
 
       setState(() {
-        _loadedDeals = deals.map(_toSellerSummary).toList(growable: false);
+        _loadedDeals = deals
+            .map(
+              (deal) => _toSellerSummary(
+                deal,
+                interestedCount: interestedCountByDeal[deal.id] ?? 0,
+              ),
+            )
+            .toList(growable: false);
       });
     } on Object catch (error) {
       if (!mounted) {
@@ -118,7 +135,7 @@ class _MyDealsPageState extends State<MyDealsPage> {
     }
   }
 
-  MyDealSummary _toSellerSummary(Deal deal) {
+  MyDealSummary _toSellerSummary(Deal deal, {required int interestedCount}) {
     return MyDealSummary(
       id: deal.id,
       role: MyDealRole.seller,
@@ -128,6 +145,7 @@ class _MyDealsPageState extends State<MyDealsPage> {
       title: deal.title,
       description: deal.description,
       coverImageUrl: _fallbackCoverImageUrl,
+      interestedCount: interestedCount,
     );
   }
 

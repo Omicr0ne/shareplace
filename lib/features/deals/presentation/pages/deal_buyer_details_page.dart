@@ -1,33 +1,122 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shareplace/core/widgets/share_button.dart';
 import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/presentation/widgets/deal_image_carousel.dart';
+import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 
 class DealBuyerDetailsPage extends StatefulWidget {
   const DealBuyerDetailsPage({
     required this.deal,
     required this.dealRepository,
+    this.profileRepository,
     super.key,
   });
 
   final Deal deal;
   final DealRepository dealRepository;
+  final ProfileRepository? profileRepository;
 
   @override
   State<DealBuyerDetailsPage> createState() => _DealBuyerDetailsPageState();
 }
 
 class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
-  // État local d'intérêt — à connecter à ton système de candidatures.
+  late final ProfileRepository _profileRepository;
+
+  String? _currentProfileId;
   bool _isInterested = false;
   int _selectedQuantity = 1;
+  bool _isLoadingInterest = true;
+  bool _isSubmittingInterest = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _profileRepository =
+        widget.profileRepository ?? SupabaseProfileRepository();
+    unawaited(_loadInterestState());
+  }
 
   Future<void> _toggleInterest() async {
-    // Local state until deal_applications is wired to Supabase.
+    if (_isSubmittingInterest || _currentProfileId == null) {
+      return;
+    }
+    setState(() {
+      _isSubmittingInterest = true;
+    });
+    try {
+      if (_isInterested) {
+        await widget.dealRepository.removeApplication(
+          dealId: widget.deal.id,
+          applicantProfileId: _currentProfileId!,
+        );
+      } else {
+        await widget.dealRepository.addApplication(
+          dealId: widget.deal.id,
+          applicantProfileId: _currentProfileId!,
+          quantity: _selectedQuantity,
+        );
+      }
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible de mettre à jour votre intérêt.'),
+        ),
+      );
+      setState(() {
+        _isSubmittingInterest = false;
+      });
+      return;
+    }
+    if (!mounted) {
+      return;
+    }
     setState(() {
       _isInterested = !_isInterested;
+      _isSubmittingInterest = false;
     });
+  }
+
+  Future<void> _loadInterestState() async {
+    try {
+      final profile = await _profileRepository.getCurrentProfile();
+      final profileId = profile?.id;
+      if (!mounted) {
+        return;
+      }
+      if (profileId == null) {
+        setState(() {
+          _isLoadingInterest = false;
+        });
+        return;
+      }
+      final isInterested = await widget.dealRepository.hasApplication(
+        dealId: widget.deal.id,
+        applicantProfileId: profileId,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _currentProfileId = profileId;
+        _isInterested = isInterested;
+        _isLoadingInterest = false;
+      });
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _isLoadingInterest = false;
+      });
+    }
   }
 
   String _shareText(Deal deal) {
@@ -257,7 +346,9 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: _toggleInterest,
+                      onPressed: (_isLoadingInterest || _isSubmittingInterest)
+                          ? null
+                          : _toggleInterest,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: _isInterested
                             ? const Color(0xFFFFB74D)

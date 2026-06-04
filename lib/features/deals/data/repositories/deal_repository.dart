@@ -1,5 +1,19 @@
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 
+class DealApplicationRecord {
+  const DealApplicationRecord({
+    required this.id,
+    required this.dealId,
+    required this.applicantProfileId,
+    required this.createdAt,
+  });
+
+  final String id;
+  final String dealId;
+  final String applicantProfileId;
+  final DateTime createdAt;
+}
+
 abstract interface class DealRepository {
   Future<Deal> getById(String id);
   Future<List<Deal>> getBySellerProfileId(String sellerProfileId);
@@ -7,4 +21,24 @@ abstract interface class DealRepository {
   Future<Deal> create(Deal deal);
   Future<Deal> update(Deal deal);
   Future<void> cancel(String id);
+  Future<Map<String, int>> countApplicationsByDealIds(List<String> dealIds);
+  Future<bool> hasApplication({
+    required String dealId,
+    required String applicantProfileId,
+  });
+  Future<void> addApplication({
+    required String dealId,
+    required String applicantProfileId,
+    int quantity,
+  });
+  Future<void> removeApplication({
+    required String dealId,
+    required String applicantProfileId,
+  });
+  Future<List<DealApplicationRecord>> getApplicationsByDealIds(
+    List<String> dealIds,
+  );
+  Future<List<DealApplicationRecord>> getApplicationsByApplicantProfileId(
+    String applicantProfileId,
+  );
 }

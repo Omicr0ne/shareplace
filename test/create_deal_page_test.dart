@@ -157,7 +157,21 @@ class _FakeDealRepository implements DealRepository {
   Deal? createdDeal;
 
   @override
+  Future<void> addApplication({
+    required String dealId,
+    required String applicantProfileId,
+    int quantity = 1,
+  }) async {}
+
+  @override
   Future<void> cancel(String id) async {}
+
+  @override
+  Future<Map<String, int>> countApplicationsByDealIds(
+    List<String> dealIds,
+  ) async {
+    return {for (final id in dealIds) id: 0};
+  }
 
   @override
   Future<Deal> create(Deal deal) async {
@@ -169,10 +183,38 @@ class _FakeDealRepository implements DealRepository {
   Future<Deal> getById(String id) async => createdDeal!;
 
   @override
+  Future<List<DealApplicationRecord>> getApplicationsByApplicantProfileId(
+    String applicantProfileId,
+  ) async {
+    return const [];
+  }
+
+  @override
+  Future<List<DealApplicationRecord>> getApplicationsByDealIds(
+    List<String> dealIds,
+  ) async {
+    return const [];
+  }
+
+  @override
   Future<List<Deal>> getBySellerProfileId(String sellerProfileId) async => [];
 
   @override
   Future<List<Deal>> getOpenDeals() async => [];
+
+  @override
+  Future<bool> hasApplication({
+    required String dealId,
+    required String applicantProfileId,
+  }) async {
+    return false;
+  }
+
+  @override
+  Future<void> removeApplication({
+    required String dealId,
+    required String applicantProfileId,
+  }) async {}
 
   @override
   Future<Deal> update(Deal deal) async => deal;
