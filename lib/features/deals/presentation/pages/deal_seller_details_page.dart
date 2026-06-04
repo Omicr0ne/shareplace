@@ -190,19 +190,29 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                   ),
                   const SizedBox(height: 16),
                   // ── En-tête description ──────────────────────────────────
-                  const Row(
+                  Row(
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Color(0xFFEF6C00),
-                        child: Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 20,
+                      Material(
+                        color: const Color(0xFFEF6C00),
+                        shape: const CircleBorder(),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.pushNamed(context, '/profile');
+                          },
+                          child: const SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
                         ),
                       ),
-                      SizedBox(width: 10),
-                      Text(
+                      const SizedBox(width: 10),
+                      const Text(
                         'Vous publiez cette annonce',
                         style: TextStyle(
                           fontSize: 14,

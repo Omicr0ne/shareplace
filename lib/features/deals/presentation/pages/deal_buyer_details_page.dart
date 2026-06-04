@@ -89,8 +89,6 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
                   ),
                   const SizedBox(height: 14),
                   // ── Carousel d'images ────────────────────────────────────
-                  // Les images sont gérées séparément (stockage fichiers).
-                  // Passe ici la liste d'URLs/bytes quand tu les as.
                   DealImageCarousel(
                     dealTitle: deal.title,
                     images: const [],
@@ -173,19 +171,33 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
                   ),
                   const SizedBox(height: 16),
                   // ── En-tête description ──────────────────────────────────
-                  const Row(
+                  Row(
                     children: [
-                      CircleAvatar(
-                        radius: 18,
-                        backgroundColor: Color(0xFFEF6C00),
-                        child: Icon(
-                          Icons.person,
-                          color: Colors.white,
-                          size: 20,
+                      Material(
+                        color: const Color(0xFFEF6C00),
+                        shape: const CircleBorder(),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          onTap: () {
+                            Navigator.pushNamed(
+                              context,
+                              '/reports/create',
+                              arguments: deal.sellerProfileId,
+                            );
+                          },
+                          child: const SizedBox(
+                            width: 36,
+                            height: 36,
+                            child: Icon(
+                              Icons.person,
+                              color: Colors.white,
+                              size: 20,
+                            ),
+                          ),
                         ),
                       ),
-                      SizedBox(width: 10),
-                      Text(
+                      const SizedBox(width: 10),
+                      const Text(
                         'Annonce du vendeur',
                         style: TextStyle(
                           fontSize: 14,

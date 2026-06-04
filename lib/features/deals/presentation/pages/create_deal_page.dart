@@ -465,6 +465,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
                           .toList(),
                     ),
                     const SizedBox(height: 18),
+                    // ── Bouton soumettre ───────────────────────────────────
                     SizedBox(
                       width: double.infinity,
                       height: 50,
@@ -539,7 +540,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
     try {
       final currentProfile = await _profileRepository.getCurrentProfile();
       if (currentProfile == null) {
-        throw StateError('No current profile found.');
+        throw StateError('Pas de profil utilisateur trouvé.');
       }
       final maxWinners = int.tryParse(_maxWinnerController.text.trim()) ?? 1;
 
@@ -553,14 +554,31 @@ class _CreateDealPageState extends State<CreateDealPage> {
         isFoodSupply: _isFoodSupply,
       );
 
+      //soucis de gestion des tags (Mise en place d'une excemption pour
+      //isoler l'erreur de tag et ne pas bloquer la création du deal)
+      // 1. Création de l'offre
       final createdDeal = await widget.dealRepository.create(deal);
-      await _dealTagRepository.setTagsForDeal(createdDeal.id, _tags);
 
-      // TODO(team): upload local images when Supabase Storage is in scope.
+      // 2. Ajout des tags (sécurisé dans un sous-try-catch pour
+      //isoler l'erreur)
+      try {
+        await _dealTagRepository.setTagsForDeal(createdDeal.id, _tags);
+      } on Object catch (tagError) {
+        // On affiche l'erreur des tags dans la console sans bloquer la
+        //validation du deal
+        debugPrint('Erreur lors de l’association des tags : $tagError');
+      }
+
+      //A faire(team): ajouter l'upload des images dans Supabase Storage
+      //et associer les URLs retournées à l'offre créée
 
       if (!mounted) return;
       Navigator.pop(context, true);
-    } on Object catch (_) {
+    } on Object catch (e) {
+      // Affichage de l'erreur globale si la création de
+      //l'offre elle-même échoue
+      debugPrint('Échec de la création complète du deal : $e');
+
       if (!mounted) return;
       setState(() {
         _isSubmitting = false;
