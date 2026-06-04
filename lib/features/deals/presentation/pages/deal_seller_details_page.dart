@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shareplace/core/widgets/share_button.dart';
 import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
@@ -198,7 +200,7 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
                           onTap: () {
-                            Navigator.pushNamed(context, '/profile');
+                            unawaited(Navigator.pushNamed(context, '/profile'));
                           },
                           child: const SizedBox(
                             width: 36,

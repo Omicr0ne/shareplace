@@ -268,10 +268,12 @@ class _DealBuyerDetailsPageState extends State<DealBuyerDetailsPage> {
                         clipBehavior: Clip.antiAlias,
                         child: InkWell(
                           onTap: () {
-                            Navigator.pushNamed(
-                              context,
-                              '/reports/create',
-                              arguments: deal.sellerProfileId,
+                            unawaited(
+                              Navigator.pushNamed(
+                                context,
+                                '/reports/create',
+                                arguments: deal.sellerProfileId,
+                              ),
                             );
                           },
                           child: const SizedBox(

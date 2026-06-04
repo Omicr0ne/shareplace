@@ -1,78 +1,45 @@
-import 'package:flutter/material.dart';
+import 'dart:async';
 
-// Modèle de données calqué sur le schéma Supabase pour structurer l'historique
-class HistoryDeal {
-  const HistoryDeal({
-    required this.id,
-    required this.title,
-    required this.description,
-    required this.imageUrl,
-    required this.formattedDate,
-    required this.state,
+import 'package:flutter/material.dart';
+import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/features/deals/data/repositories/deal_repository.dart';
+import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
+import 'package:shareplace/features/deals/domain/entities/deal.dart';
+import 'package:shareplace/features/deals/presentation/pages/deal_buyer_details_page.dart';
+import 'package:shareplace/features/deals/presentation/pages/deal_seller_details_page.dart';
+import 'package:shareplace/features/profiles/data/repositories/profile_repository.dart';
+import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
+
+class HistoryPage extends StatefulWidget {
+  const HistoryPage({
+    this.dealRepository,
+    this.profileRepository,
+    super.key,
   });
 
-  final String id;
-  final String title; // deals.title (ex: "Petite armoire")
-  final String description; // deals.description
-  final String imageUrl; // deal_images.url
-  final String formattedDate; // deal.updated_at formaté pour l'affichage
-  final String state; // deal_state (ici toujours 'closed' ou conclu)
+  final DealRepository? dealRepository;
+  final ProfileRepository? profileRepository;
+
+  @override
+  State<HistoryPage> createState() => _HistoryPageState();
 }
 
-class HistoryPage extends StatelessWidget {
-  const HistoryPage({super.key});
+class _HistoryPageState extends State<HistoryPage> {
+  static const _fallbackImageUrl =
+      'https://picsum.photos/seed/shareplace-history/300/200';
 
-  // Simulation des données d'historique (Deals conclus/closed) pour le Sprint 1
-  static const List<HistoryDeal> _historiqueDeals = [
-    HistoryDeal(
-      id: '1',
-      title: 'Petite armoire',
-      description:
-          'Petite armoire à donner...\n'
-          "Un peu usée par le temps, mais pleine d'histoires à raconter. "
-          'Elle a connu des matins pressés, des vêtements...',
-      imageUrl:
-          'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=300',
-      formattedDate: '12/05/2026',
-      state: 'closed',
-    ),
-    HistoryDeal(
-      id: '2',
-      title: 'Petite armoire',
-      description:
-          'Petite armoire à donner...\n'
-          "Un peu usée par le temps, mais pleine d'histoires à raconter. "
-          'Elle a connu des matins pressés, des vêtements...',
-      imageUrl:
-          'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=300',
-      formattedDate: '28/04/2026',
-      state: 'closed',
-    ),
-    HistoryDeal(
-      id: '3',
-      title: 'Petite armoire',
-      description:
-          'Petite armoire à donner...\n'
-          "Un peu usée par le temps, mais pleine d'histoires à raconter. "
-          'Elle a connu des matins pressés, des vêtements...',
-      imageUrl:
-          'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=300',
-      formattedDate: '15/04/2026',
-      state: 'closed',
-    ),
-    HistoryDeal(
-      id: '4',
-      title: 'Petite armoire',
-      description:
-          'Petite armoire à donner...\n'
-          "Un peu usée par le temps, mais pleine d'histoires à raconter. "
-          'Elle a connu des matins pressés, des vêtements...',
-      imageUrl:
-          'https://images.unsplash.com/photo-1595428774223-ef52624120d2?w=300',
-      formattedDate: '02/04/2026',
-      state: 'closed',
-    ),
-  ];
+  late final DealRepository _dealRepository;
+  late final ProfileRepository _profileRepository;
+  Future<_HistoryData>? _historyFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _dealRepository = widget.dealRepository ?? SupabaseDealRepository();
+    _profileRepository =
+        widget.profileRepository ?? SupabaseProfileRepository();
+    _historyFuture = _loadHistory();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -87,123 +54,214 @@ class HistoryPage extends StatelessWidget {
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.bold,
-            color: Color(0xFFFF841D), // Orange caractéristique de Shareplace
+            color: Color(0xFFFF841D),
           ),
         ),
-        // Flèche de retour si la page est poussée dans la navigation
-        leading: Navigator.canPop(context)
-            ? IconButton(
-                icon: const Icon(Icons.arrow_back, color: Colors.black),
-                onPressed: () => Navigator.pop(context),
-              )
-            : null,
+        leading: IconButton(
+          icon: const Icon(Icons.arrow_back, color: Colors.black),
+          onPressed: _goHome,
+          tooltip: 'Retour à l’accueil',
+        ),
       ),
-      body: ListView.builder(
-        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-        itemCount: _historiqueDeals.length,
-        itemBuilder: (context, index) {
-          final deal = _historiqueDeals[index];
-          return _buildHistoryCard(deal);
+      body: FutureBuilder<_HistoryData>(
+        future: _historyFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasError) {
+            return const Center(
+              child: Text('Impossible de charger l’historique.'),
+            );
+          }
+
+          final historyData = snapshot.data;
+          final deals = historyData?.deals ?? const <Deal>[];
+          if (deals.isEmpty) {
+            return const Center(
+              child: Text('Aucune annonce dans l’historique.'),
+            );
+          }
+
+          return ListView.builder(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            itemCount: deals.length,
+            itemBuilder: (context, index) {
+              final deal = deals[index];
+              return Padding(
+                padding: const EdgeInsets.only(bottom: 14),
+                child: _buildHistoryCard(
+                  deal: deal,
+                  currentProfileId: historyData?.currentProfileId,
+                ),
+              );
+            },
+          );
         },
       ),
     );
   }
 
-  // Construction de la carte d'historique avec sa bordure orange
-  Widget _buildHistoryCard(HistoryDeal deal) {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: const Color(0xFFFF841D), // Couleur orange de la bordure
-          width: 1.5,
+  Future<_HistoryData> _loadHistory() async {
+    final currentProfile = await _profileRepository.getCurrentProfile();
+    if (currentProfile == null) {
+      return const _HistoryData(deals: []);
+    }
+
+    final sellerDeals = await _dealRepository.getBySellerProfileId(
+      currentProfile.id,
+    );
+    final closedDeals =
+        sellerDeals
+            .where((deal) => deal.state == DealState.closed)
+            .toList(growable: false)
+          ..sort((a, b) {
+            final aDate = a.updatedAt ?? a.createdAt ?? DateTime(1970);
+            final bDate = b.updatedAt ?? b.createdAt ?? DateTime(1970);
+            return bDate.compareTo(aDate);
+          });
+
+    return _HistoryData(
+      deals: closedDeals,
+      currentProfileId: currentProfile.id,
+    );
+  }
+
+  Widget _buildHistoryCard({
+    required Deal deal,
+    required String? currentProfileId,
+  }) {
+    final formattedDate = _formatDate(deal.updatedAt ?? deal.createdAt);
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: () => _openDealDetails(deal, currentProfileId),
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: const Color(0xFFFF841D),
+            width: 1.5,
+          ),
         ),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          // Titre du Deal centré en haut de la carte
-          Center(
-            child: Text(
-              deal.title,
-              style: TextStyle(
-                fontSize: 15,
-                fontWeight: FontWeight.bold,
-                color: Colors.grey.shade700,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Text(
+                deal.title,
+                style: TextStyle(
+                  fontSize: 15,
+                  fontWeight: FontWeight.bold,
+                  color: Colors.grey.shade700,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 10),
-
-          // Ligne contenant l'image et la description
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // Image du deal avec des angles arrondis
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: Image.network(
-                  deal.imageUrl,
-                  width: 120,
-                  height: 100,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Container(
-                      width: 120,
-                      height: 100,
-                      color: Colors.grey.shade300,
-                      child: const Icon(Icons.image, color: Colors.white),
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(width: 14),
-
-              // Description du deal
-              Expanded(
-                child: Text(
-                  deal.description,
-                  style: TextStyle(
-                    fontSize: 12,
-                    height: 1.3,
-                    color: Colors.grey.shade600,
-                  ),
-                  maxLines: 6,
-                  overflow: TextOverflow.ellipsis,
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 8),
-
-          // Zone inférieure : Case verte de validation et date du deal
-          Padding(
-            padding: const EdgeInsets.only(
-              left: 100,
-            ), // Aligné sous le début de la description
-            child: Row(
+            const SizedBox(height: 10),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Icon(
-                  Icons.check_box,
-                  color: Color(0xFF00B25C), // Vert de validation de la maquette
-                  size: 24,
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(16),
+                  child: Image.network(
+                    _fallbackImageUrl,
+                    width: 120,
+                    height: 100,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) {
+                      return Container(
+                        width: 120,
+                        height: 100,
+                        color: Colors.grey.shade300,
+                        child: const Icon(Icons.image, color: Colors.white),
+                      );
+                    },
+                  ),
                 ),
-                const SizedBox(width: 6),
-                Text(
-                  '(${deal.formattedDate})',
-                  style: TextStyle(
-                    fontSize: 12,
-                    fontStyle: FontStyle.italic,
-                    color: Colors.grey.shade800,
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Text(
+                    deal.description,
+                    style: TextStyle(
+                      fontSize: 12,
+                      height: 1.3,
+                      color: Colors.grey.shade600,
+                    ),
+                    maxLines: 6,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
               ],
             ),
-          ),
-        ],
+            const SizedBox(height: 8),
+            Padding(
+              padding: const EdgeInsets.only(left: 100),
+              child: Row(
+                children: [
+                  const Icon(
+                    Icons.check_box,
+                    color: Color(0xFF00B25C),
+                    size: 24,
+                  ),
+                  const SizedBox(width: 6),
+                  Text(
+                    '($formattedDate)',
+                    style: TextStyle(
+                      fontSize: 12,
+                      fontStyle: FontStyle.italic,
+                      color: Colors.grey.shade800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
+
+  Future<void> _openDealDetails(Deal deal, String? currentProfileId) async {
+    final page = deal.sellerProfileId == currentProfileId
+        ? DealSellerDetailsPage(
+            deal: deal,
+            dealRepository: _dealRepository,
+          )
+        : DealBuyerDetailsPage(
+            deal: deal,
+            dealRepository: _dealRepository,
+          );
+    await Navigator.of(
+      context,
+    ).push(MaterialPageRoute<void>(builder: (context) => page));
+  }
+
+  void _goHome() {
+    unawaited(
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.deals, (_) => false),
+    );
+  }
+
+  String _formatDate(DateTime? value) {
+    if (value == null) {
+      return '--/--/----';
+    }
+    final day = value.day.toString().padLeft(2, '0');
+    final month = value.month.toString().padLeft(2, '0');
+    final year = value.year.toString();
+    return '$day/$month/$year';
+  }
+}
+
+class _HistoryData {
+  const _HistoryData({
+    required this.deals,
+    this.currentProfileId,
+  });
+
+  final List<Deal> deals;
+  final String? currentProfileId;
 }
