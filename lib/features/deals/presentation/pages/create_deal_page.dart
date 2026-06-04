@@ -341,6 +341,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
                     // ── Titre (= title dans Deal) ───────────────────────────
                     _TextFieldSection(
                       controller: _titleController,
+                      labelText: "Titre de l'offre",
                       hintText: "Titre de l'offre",
                       validator: (value) {
                         if (value == null || value.trim().isEmpty) {
@@ -357,6 +358,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
                     // ── Description ────────────────────────────────────────
                     _TextFieldSection(
                       controller: _descriptionController,
+                      labelText: 'Description',
                       hintText: 'Description',
                       maxLines: 4,
                       validator: (value) {
@@ -374,6 +376,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
                     // ── Code postal (= postalCode dans Deal) ───────────────
                     _TextFieldSection(
                       controller: _postalCodeController,
+                      labelText: 'Code postal',
                       hintText: 'Code postal',
                       keyboardType: TextInputType.number,
                       validator: (value) =>
@@ -385,6 +388,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
                     // ── Nombre de lots (= maxWinnerCount dans Deal) ─────────
                     _TextFieldSection(
                       controller: _maxWinnerController,
+                      labelText: 'Nombre de lots disponibles',
                       hintText: 'Nombre de lots disponibles',
                       keyboardType: TextInputType.number,
                       validator: (value) {
@@ -438,7 +442,10 @@ class _CreateDealPageState extends State<CreateDealPage> {
                     DropdownButtonFormField<String>(
                       initialValue: _selectedTag,
                       isExpanded: true,
-                      decoration: _inputDecoration('Tags'),
+                      decoration: _inputDecoration(
+                        labelText: 'Tags',
+                        hintText: 'Tags',
+                      ),
                       items: (_availableTags ?? const <String>[])
                           .map(
                             (tag) => DropdownMenuItem(
@@ -507,8 +514,12 @@ class _CreateDealPageState extends State<CreateDealPage> {
     );
   }
 
-  InputDecoration _inputDecoration(String hintText) {
+  InputDecoration _inputDecoration({
+    required String labelText,
+    required String hintText,
+  }) {
     return InputDecoration(
+      labelText: labelText,
       hintText: hintText,
       filled: true,
       fillColor: const Color(0xFFF8F9FF),
@@ -606,6 +617,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
 class _TextFieldSection extends StatelessWidget {
   const _TextFieldSection({
     required this.controller,
+    required this.labelText,
     required this.hintText,
     this.maxLines = 1,
     this.validator,
@@ -613,6 +625,7 @@ class _TextFieldSection extends StatelessWidget {
   });
 
   final TextEditingController controller;
+  final String labelText;
   final String hintText;
   final int maxLines;
   final String? Function(String?)? validator;
@@ -626,6 +639,8 @@ class _TextFieldSection extends StatelessWidget {
       validator: validator,
       keyboardType: keyboardType,
       decoration: InputDecoration(
+        alignLabelWithHint: maxLines > 1,
+        labelText: labelText,
         hintText: hintText,
         filled: true,
         fillColor: const Color(0xFFF8F9FF),
