@@ -1,8 +1,12 @@
 import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/features/product/data/products_data.dart';
-import 'package:shareplace/features/product/domain/entities/product_item.dart';
+import 'package:shareplace/core/models/deal.dart';
+import 'package:shareplace/core/repositories/deal_repository.dart';
+import 'package:shareplace/core/repositories/profile_repository.dart';
+import 'package:shareplace/core/repositories/supabase_deal_repository.dart';
+import 'package:shareplace/core/repositories/supabase_profile_repository.dart';
 import 'package:shareplace/features/product/presentation/pages/product_buyer_details_page.dart';
 import 'package:shareplace/features/product/presentation/pages/product_seller_details_page.dart';
 
@@ -14,29 +18,67 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  List<ProductItem> get _products => ProductsData.products;
+  late final ProfileRepository _profileRepository;
+  late final DealRepository _dealRepository;
+  Future<_HomeData>? _homeDataFuture;
 
-  Future<void> _openAddProductPage() async {
-    final result = await Navigator.pushNamed(context, AppRoutes.addProduct);
-    if (result == true && mounted) {
-      setState(() {});
-    }
+  @override
+  void initState() {
+    super.initState();
+    _profileRepository = SupabaseProfileRepository();
+    _dealRepository = SupabaseDealRepository();
+    _homeDataFuture = _loadHomeData();
   }
 
-  Future<void> _openProductDetails(ProductItem product) async {
-    final page = product.vendeur == 'Moi'
-        ? ProductSellerDetailsPage(product: product)
-        : ProductBuyerDetailsPage(product: product);
+  Future<_HomeData> _loadHomeData() async {
+    final currentProfile = await _profileRepository.getCurrentProfile();
+    final deals = await _dealRepository.getOpenDeals();
+    return _HomeData(
+      deals: deals,
+      currentProfileId: currentProfile?.id,
+    );
+  }
 
-    final result = await Navigator.push<bool>(
+  Future<void> _openAddDealPage() async {
+    final currentProfileId =
+        (await _homeDataFuture)?.currentProfileId ?? '';
+
+    final result = await Navigator.pushNamed(
       context,
-      MaterialPageRoute(
-        builder: (context) => page,
-      ),
+      AppRoutes.addProduct,
+      arguments: {
+        'dealRepository': _dealRepository,
+        'sellerProfileId': currentProfileId,
+      },
     );
 
     if (result == true && mounted) {
-      setState(() {});
+      setState(() {
+        _homeDataFuture = _loadHomeData();
+      });
+    }
+  }
+
+  Future<void> _openDealDetails(Deal deal, String? currentProfileId) async {
+    final page = deal.sellerProfileId == currentProfileId
+        ? ProductSellerDetailsPage(
+            deal: deal,
+            dealRepository: _dealRepository,
+          )
+        : ProductBuyerDetailsPage(
+            deal: deal,
+            dealRepository: _dealRepository,
+          );
+
+    final result = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(builder: (context) => page),
+    );
+
+    if (result == true && mounted) {
+      setState(() {
+        _homeDataFuture = _loadHomeData();
+      });
     }
   }
 
@@ -111,7 +153,7 @@ class _HomePageState extends State<HomePage> {
               title: const Text('Ajouter un produit'),
               onTap: () async {
                 Navigator.pop(context);
-                await _openAddProductPage();
+                await _openAddDealPage();
               },
             ),
             ListTile(
@@ -174,49 +216,78 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
       body: SafeArea(
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
-              child: TextField(
-                onTap: () => _showComingSoon(context),
-                readOnly: true,
-                decoration: InputDecoration(
-                  hintText: 'Rechercher un produit',
-                  prefixIcon: const Icon(Icons.search),
-                  filled: true,
-                  fillColor: Colors.white,
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(16),
-                    borderSide: BorderSide.none,
+        child: FutureBuilder<_HomeData>(
+          future: _homeDataFuture,
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return const Center(child: CircularProgressIndicator());
+            }
+
+            if (snapshot.hasError) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(24),
+                  child: Text(
+                    'Impossible de charger les offres.',
+                    style: Theme.of(context).textTheme.titleMedium,
+                    textAlign: TextAlign.center,
                   ),
                 ),
-              ),
-            ),
-            Expanded(
-              child: GridView.builder(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 12,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: 0.78,
+              );
+            }
+
+            final homeData = snapshot.data;
+            final deals = homeData?.deals ?? const <Deal>[];
+
+            return Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 12),
+                  child: TextField(
+                    onTap: () => _showComingSoon(context),
+                    readOnly: true,
+                    decoration: InputDecoration(
+                      hintText: 'Rechercher une offre',
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: Colors.white,
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(16),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
                 ),
-                itemCount: _products.length,
-                itemBuilder: (context, index) {
-                  final product = _products[index];
-                  return _ProductCard(
-                    product: product,
-                    onTap: () => _openProductDetails(product),
-                  );
-                },
-              ),
-            ),
-          ],
+                Expanded(
+                  child: GridView.builder(
+                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 0.78,
+                        ),
+                    itemCount: deals.length,
+                    itemBuilder: (context, index) {
+                      final deal = deals[index];
+                      return _DealCard(
+                        deal: deal,
+                        onTap: () => _openDealDetails(
+                          deal,
+                          homeData?.currentProfileId,
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            );
+          },
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _openAddProductPage,
+        onPressed: _openAddDealPage,
         backgroundColor: const Color(0xFFEF6C00),
         foregroundColor: Colors.white,
         child: const Icon(Icons.add),
@@ -225,7 +296,6 @@ class _HomePageState extends State<HomePage> {
     );
   }
 
-  // Message de page à venir.
   static void _showComingSoon(BuildContext context) {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('En développement.')),
@@ -233,13 +303,13 @@ class _HomePageState extends State<HomePage> {
   }
 }
 
-class _ProductCard extends StatelessWidget {
-  const _ProductCard({
-    required this.product,
+class _DealCard extends StatelessWidget {
+  const _DealCard({
+    required this.deal,
     required this.onTap,
   });
 
-  final ProductItem product;
+  final Deal deal;
   final VoidCallback onTap;
 
   @override
@@ -263,12 +333,33 @@ class _ProductCard extends StatelessWidget {
                     colors: [Color(0xFFFFE0B2), Color(0xFFFFCC80)],
                   ),
                 ),
-                child: const Center(
-                  child: Icon(
-                    Icons.inventory_2_outlined,
-                    size: 44,
-                    color: Color(0xFF8D6E63),
-                  ),
+                child: Stack(
+                  children: [
+                    const Center(
+                      child: Icon(
+                        Icons.inventory_2_outlined,
+                        size: 44,
+                        color: Color(0xFF8D6E63),
+                      ),
+                    ),
+                    if (deal.isFoodSupply)
+                      Positioned(
+                        top: 8,
+                        right: 8,
+                        child: Container(
+                          padding: const EdgeInsets.all(4),
+                          decoration: BoxDecoration(
+                            color: Colors.green.shade700,
+                            shape: BoxShape.circle,
+                          ),
+                          child: const Icon(
+                            Icons.restaurant,
+                            size: 14,
+                            color: Colors.white,
+                          ),
+                        ),
+                      ),
+                  ],
                 ),
               ),
             ),
@@ -278,7 +369,7 @@ class _ProductCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    product.article,
+                    deal.title,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
@@ -287,11 +378,21 @@ class _ProductCard extends StatelessWidget {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    product.vendeur,
+                    deal.postalCode,
                     style: Theme.of(context).textTheme.bodySmall?.copyWith(
                       color: Colors.grey.shade700,
                     ),
                   ),
+                  if (deal.maxWinnerCount > 1) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      '${deal.maxWinnerCount} lots',
+                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                        color: const Color(0xFFEF6C00),
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ],
                 ],
               ),
             ),
@@ -300,4 +401,14 @@ class _ProductCard extends StatelessWidget {
       ),
     );
   }
+}
+
+class _HomeData {
+  const _HomeData({
+    required this.deals,
+    required this.currentProfileId,
+  });
+
+  final List<Deal> deals;
+  final String? currentProfileId;
 }

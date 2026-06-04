@@ -3,6 +3,7 @@ import 'dart:typed_data';
 class ProductItem {
   const ProductItem({
     required this.id,
+    required this.sellerProfileId,
     required this.article,
     required this.vendeur,
     required this.description,
@@ -11,7 +12,8 @@ class ProductItem {
     required this.images,
   });
 
-  final int id;
+  final String id;
+  final String sellerProfileId;
   final String article;
   final String vendeur;
   final String description;

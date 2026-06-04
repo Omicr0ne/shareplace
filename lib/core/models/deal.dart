@@ -74,7 +74,7 @@ class Deal {
 
   Map<String, Object?> toJson() {
     return {
-      'id': id,
+      if (id.isNotEmpty) 'id': id,
       'seller_profile_id': sellerProfileId,
       'title': title,
       'description': description,

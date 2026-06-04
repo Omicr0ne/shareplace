@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:shareplace/core/models/deal.dart';
+import 'package:shareplace/core/repositories/deal_repository.dart';
 import 'package:shareplace/core/widgets/share_button.dart';
-import 'package:shareplace/features/product/data/products_data.dart';
-import 'package:shareplace/features/product/domain/entities/product_item.dart';
 import 'package:shareplace/features/product/presentation/widgets/product_image_carousel.dart';
 
 class ProductBuyerDetailsPage extends StatefulWidget {
-  const ProductBuyerDetailsPage({required this.product, super.key});
+  const ProductBuyerDetailsPage({
+    required this.deal,
+    required this.dealRepository,
+    super.key,
+  });
 
-  final ProductItem product;
+  final Deal deal;
+  final DealRepository dealRepository;
 
   @override
   State<ProductBuyerDetailsPage> createState() =>
@@ -15,26 +20,32 @@ class ProductBuyerDetailsPage extends StatefulWidget {
 }
 
 class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
-  bool get _isInterested => ProductsData.isInterested(widget.product.id);
+  // État local d'intérêt — à connecter à ton système de candidatures.
+  bool _isInterested = false;
+  int _selectedQuantity = 1;
 
   Future<void> _toggleInterest() async {
+    // TODO: appeler ton repository de candidatures avec
+    // widget.deal.id et _selectedQuantity.
     setState(() {
-      ProductsData.toggleInterest(widget.product.id);
+      _isInterested = !_isInterested;
     });
   }
 
-  String _shareText(ProductItem product) {
-    return 'Découvrez cette annonce sur SharePlace : ${product.article}\n'
-        'Lieu : ${product.ville}\n\n'
-        '${product.description}';
+  String _shareText(Deal deal) {
+    return 'Découvrez cette annonce sur SharePlace : ${deal.title}\n'
+        'Code postal : ${deal.postalCode}\n\n'
+        '${deal.description}';
   }
 
   @override
   Widget build(BuildContext context) {
-    final product = widget.product;
-    final interestText = _isInterested
-        ? 'Je ne suis plus intéressé'
-        : 'Je suis intéressé';
+    final deal = widget.deal;
+    final maxAvailable = deal.maxWinnerCount;
+    final isFood = deal.isFoodSupply;
+
+    final interestText =
+        _isInterested ? 'Je ne suis plus intéressé' : 'Je suis intéressé';
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EF),
@@ -49,9 +60,9 @@ class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
         ),
         actions: [
           ShareButton(
-            title: product.article,
-            subject: 'Annonce SharePlace : ${product.article}',
-            text: _shareText(product),
+            title: deal.title,
+            subject: 'Annonce SharePlace : ${deal.title}',
+            text: _shareText(deal),
           ),
           const SizedBox(width: 8),
         ],
@@ -65,9 +76,10 @@ class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Titre ────────────────────────────────────────────────
                   Align(
                     child: Text(
-                      product.article,
+                      deal.title,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 24,
@@ -77,11 +89,48 @@ class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 14),
+                  // ── Carousel d'images ────────────────────────────────────
+                  // Les images sont gérées séparément (stockage fichiers).
+                  // Passe ici la liste d'URLs/bytes quand tu les as.
                   ProductImageCarousel(
-                    productTitle: product.article,
-                    images: product.images,
+                    productTitle: deal.title,
+                    images: const [], // TODO: charger les images du deal
                   ),
                   const SizedBox(height: 16),
+                  // ── Badge denrée alimentaire ─────────────────────────────
+                  if (isFood) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.restaurant,
+                            size: 16,
+                            color: Colors.green.shade800,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Denrée alimentaire',
+                            style: TextStyle(
+                              color: Colors.green.shade800,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  // ── Localisation (code postal) ───────────────────────────
                   Row(
                     children: [
                       const Icon(
@@ -92,7 +141,7 @@ class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          product.ville,
+                          deal.postalCode,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -103,22 +152,27 @@ class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: product.tags
-                        .map(
-                          (tag) => Chip(
-                            label: Text(tag),
-                            backgroundColor: const Color(0xFFFFF3E0),
-                            labelStyle: const TextStyle(
-                              color: Color(0xFF3E2723),
-                            ),
-                          ),
-                        )
-                        .toList(),
+                  // ── Nombre de lots disponibles ──────────────────────────
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.inventory_2_outlined,
+                        size: 18,
+                        color: Color(0xFFEF6C00),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '$maxAvailable lot${maxAvailable > 1 ? 's' : ''} disponible${maxAvailable > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF5D4037),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
+                  // ── En-tête description ──────────────────────────────────
                   const Row(
                     children: [
                       CircleAvatar(
@@ -143,7 +197,7 @@ class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    product.description,
+                    deal.description,
                     style: const TextStyle(
                       fontSize: 14,
                       height: 1.45,
@@ -151,6 +205,42 @@ class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // ── Sélecteur de quantité (si plusieurs lots et pas encore intéressé) ──
+                  if (maxAvailable > 1 && !_isInterested) ...[
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        const Text(
+                          'Quantité souhaitée :',
+                          style: TextStyle(
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF3E2723),
+                          ),
+                        ),
+                        DropdownButton<int>(
+                          value: _selectedQuantity,
+                          dropdownColor: const Color(0xFFF7F4EF),
+                          items: List.generate(maxAvailable, (i) => i + 1)
+                              .map(
+                                (qty) => DropdownMenuItem(
+                                  value: qty,
+                                  child: Text('$qty'),
+                                ),
+                              )
+                              .toList(),
+                          onChanged: (value) {
+                            if (value != null) {
+                              setState(() {
+                                _selectedQuantity = value;
+                              });
+                            }
+                          },
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                  // ── Bouton intérêt ───────────────────────────────────────
                   SizedBox(
                     width: double.infinity,
                     height: 52,
@@ -166,7 +256,11 @@ class _ProductBuyerDetailsPageState extends State<ProductBuyerDetailsPage> {
                         ),
                         elevation: 3,
                       ),
-                      child: Text(interestText),
+                      child: Text(
+                        _isInterested
+                            ? interestText
+                            : '$interestText ($_selectedQuantity)',
+                      ),
                     ),
                   ),
                   const SizedBox(height: 10),

@@ -1,13 +1,18 @@
 import 'package:flutter/material.dart';
+import 'package:shareplace/core/models/deal.dart';
+import 'package:shareplace/core/repositories/deal_repository.dart';
 import 'package:shareplace/core/widgets/share_button.dart';
-import 'package:shareplace/features/product/data/products_data.dart';
-import 'package:shareplace/features/product/domain/entities/product_item.dart';
 import 'package:shareplace/features/product/presentation/widgets/product_image_carousel.dart';
 
 class ProductSellerDetailsPage extends StatefulWidget {
-  const ProductSellerDetailsPage({required this.product, super.key});
+  const ProductSellerDetailsPage({
+    required this.deal,
+    required this.dealRepository,
+    super.key,
+  });
 
-  final ProductItem product;
+  final Deal deal;
+  final DealRepository dealRepository;
 
   @override
   State<ProductSellerDetailsPage> createState() =>
@@ -15,20 +20,20 @@ class ProductSellerDetailsPage extends StatefulWidget {
 }
 
 class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
-  String _shareText(ProductItem product) {
-    return 'Découvrez cette annonce sur SharePlace : ${product.article}\n'
-        'Lieu : ${product.ville}\n\n'
-        '${product.description}';
+  String _shareText(Deal deal) {
+    return 'Découvrez cette annonce sur SharePlace : ${deal.title}\n'
+        'Code postal : ${deal.postalCode}\n\n'
+        '${deal.description}';
   }
 
-  Future<void> _deleteProduct() async {
+  Future<void> _cancelDeal() async {
     final shouldDelete = await showDialog<bool>(
       context: context,
       builder: (context) {
         return AlertDialog(
           title: const Text("Supprimer l'annonce ?"),
           content: const Text(
-            'Cette action est definitive pour cette maquette locale.',
+            'Cette action est définitive et annulera votre offre.',
           ),
           actions: [
             TextButton(
@@ -48,21 +53,17 @@ class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
       },
     );
 
-    if (shouldDelete != true) {
-      return;
-    }
+    if (shouldDelete != true) return;
 
-    ProductsData.removeProduct(widget.product.id);
-    if (!mounted) {
-      return;
-    }
+    await widget.dealRepository.cancel(widget.deal.id);
+    if (!mounted) return;
 
     Navigator.pop(context, true);
   }
 
   @override
   Widget build(BuildContext context) {
-    final product = widget.product;
+    final deal = widget.deal;
 
     return Scaffold(
       backgroundColor: const Color(0xFFF7F4EF),
@@ -77,9 +78,9 @@ class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
         ),
         actions: [
           ShareButton(
-            title: product.article,
-            subject: 'Annonce SharePlace : ${product.article}',
-            text: _shareText(product),
+            title: deal.title,
+            subject: 'Annonce SharePlace : ${deal.title}',
+            text: _shareText(deal),
           ),
           const SizedBox(width: 8),
         ],
@@ -93,9 +94,10 @@ class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ── Titre ────────────────────────────────────────────────
                   Align(
                     child: Text(
-                      product.article,
+                      deal.title,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         fontSize: 24,
@@ -105,11 +107,46 @@ class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 14),
+                  // ── Carousel d'images ────────────────────────────────────
                   ProductImageCarousel(
-                    productTitle: product.article,
-                    images: product.images,
+                    productTitle: deal.title,
+                    images: const [], // TODO: charger les images du deal
                   ),
                   const SizedBox(height: 16),
+                  // ── Badge denrée alimentaire ─────────────────────────────
+                  if (deal.isFoodSupply) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 6,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.green.shade100,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            Icons.restaurant,
+                            size: 16,
+                            color: Colors.green.shade800,
+                          ),
+                          const SizedBox(width: 6),
+                          Text(
+                            'Denrée alimentaire',
+                            style: TextStyle(
+                              color: Colors.green.shade800,
+                              fontWeight: FontWeight.w600,
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                  ],
+                  // ── Code postal ──────────────────────────────────────────
                   Row(
                     children: [
                       const Icon(
@@ -120,7 +157,7 @@ class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
                       const SizedBox(width: 6),
                       Expanded(
                         child: Text(
-                          product.ville,
+                          deal.postalCode,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w600,
@@ -131,22 +168,27 @@ class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
                     ],
                   ),
                   const SizedBox(height: 12),
-                  Wrap(
-                    spacing: 8,
-                    runSpacing: 8,
-                    children: product.tags
-                        .map(
-                          (tag) => Chip(
-                            label: Text(tag),
-                            backgroundColor: const Color(0xFFFFF3E0),
-                            labelStyle: const TextStyle(
-                              color: Color(0xFF3E2723),
-                            ),
-                          ),
-                        )
-                        .toList(),
+                  // ── Nombre de lots ───────────────────────────────────────
+                  Row(
+                    children: [
+                      const Icon(
+                        Icons.inventory_2_outlined,
+                        size: 18,
+                        color: Color(0xFFEF6C00),
+                      ),
+                      const SizedBox(width: 6),
+                      Text(
+                        '${deal.maxWinnerCount} lot${deal.maxWinnerCount > 1 ? 's' : ''} disponible${deal.maxWinnerCount > 1 ? 's' : ''}',
+                        style: const TextStyle(
+                          fontSize: 13,
+                          fontWeight: FontWeight.w600,
+                          color: Color(0xFF5D4037),
+                        ),
+                      ),
+                    ],
                   ),
                   const SizedBox(height: 16),
+                  // ── En-tête description ──────────────────────────────────
                   const Row(
                     children: [
                       CircleAvatar(
@@ -171,7 +213,7 @@ class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
                   ),
                   const SizedBox(height: 12),
                   Text(
-                    product.description,
+                    deal.description,
                     style: const TextStyle(
                       fontSize: 14,
                       height: 1.45,
@@ -179,11 +221,12 @@ class _ProductSellerDetailsPageState extends State<ProductSellerDetailsPage> {
                     ),
                   ),
                   const SizedBox(height: 24),
+                  // ── Bouton suppression ───────────────────────────────────
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: ElevatedButton(
-                      onPressed: _deleteProduct,
+                      onPressed: _cancelDeal,
                       style: ElevatedButton.styleFrom(
                         backgroundColor: const Color(0xFFEF6C00),
                         foregroundColor: Colors.white,

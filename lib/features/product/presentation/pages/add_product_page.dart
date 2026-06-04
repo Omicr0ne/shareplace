@@ -2,11 +2,19 @@ import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:shareplace/features/product/data/products_data.dart';
+import 'package:shareplace/core/models/deal.dart';
+import 'package:shareplace/core/repositories/deal_repository.dart';
 import 'package:shareplace/features/product/presentation/widgets/product_image_carousel.dart';
 
 class AddProductPage extends StatefulWidget {
-  const AddProductPage({super.key});
+  const AddProductPage({
+    required this.dealRepository,
+    required this.sellerProfileId,
+    super.key,
+  });
+
+  final DealRepository dealRepository;
+  final String sellerProfileId;
 
   @override
   State<AddProductPage> createState() => _AddProductPageState();
@@ -14,9 +22,10 @@ class AddProductPage extends StatefulWidget {
 
 class _AddProductPageState extends State<AddProductPage> {
   final _formKey = GlobalKey<FormState>();
-  final _productController = TextEditingController();
+  final _titleController = TextEditingController();
   final _descriptionController = TextEditingController();
-  final _cityController = TextEditingController();
+  final _postalCodeController = TextEditingController();
+  final _maxWinnerController = TextEditingController(text: '1');
   final _picker = ImagePicker();
 
   final List<String> _tags = [];
@@ -24,12 +33,14 @@ class _AddProductPageState extends State<AddProductPage> {
   String? _selectedTag;
   bool _isImportingImages = false;
   bool _showImageError = false;
+  bool _isFoodSupply = false;
 
   @override
   void dispose() {
-    _productController.dispose();
+    _titleController.dispose();
     _descriptionController.dispose();
-    _cityController.dispose();
+    _postalCodeController.dispose();
+    _maxWinnerController.dispose();
     super.dispose();
   }
 
@@ -37,7 +48,7 @@ class _AddProductPageState extends State<AddProductPage> {
     if (_productImages.length >= ProductImageCarousel.maxImages) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Limite atteinte: 5 images maximum par produit.'),
+          content: Text('Limite atteinte: 5 images maximum par offre.'),
         ),
       );
       return;
@@ -49,13 +60,8 @@ class _AddProductPageState extends State<AddProductPage> {
 
     try {
       final pickedFiles = await _picker.pickMultiImage(imageQuality: 85);
-      if (!mounted) {
-        return;
-      }
-
-      if (pickedFiles.isEmpty) {
-        return;
-      }
+      if (!mounted) return;
+      if (pickedFiles.isEmpty) return;
 
       final availableSlots =
           ProductImageCarousel.maxImages - _productImages.length;
@@ -77,9 +83,7 @@ class _AddProductPageState extends State<AddProductPage> {
         );
       }
     } on Exception catch (_) {
-      if (!mounted) {
-        return;
-      }
+      if (!mounted) return;
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text("Impossible d'importer les images pour le moment."),
@@ -122,7 +126,7 @@ class _AddProductPageState extends State<AddProductPage> {
           icon: const Icon(Icons.arrow_back),
           tooltip: 'Retour',
         ),
-        title: const Text('Ajout Produit'),
+        title: const Text("Ajout d'offre"),
         centerTitle: false,
         foregroundColor: const Color(0xFF3E2723),
       ),
@@ -147,6 +151,7 @@ class _AddProductPageState extends State<AddProductPage> {
                       ),
                     ),
                     const SizedBox(height: 18),
+                    // ── Section images ──────────────────────────────────────
                     Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(16),
@@ -187,7 +192,9 @@ class _AddProductPageState extends State<AddProductPage> {
                                   const SizedBox(height: 4),
                                   Text(
                                     '5 images maximum',
-                                    style: Theme.of(context).textTheme.bodySmall
+                                    style: Theme.of(context)
+                                        .textTheme
+                                        .bodySmall
                                         ?.copyWith(
                                           color: const Color(0xFF8D6E63),
                                         ),
@@ -274,10 +281,10 @@ class _AddProductPageState extends State<AddProductPage> {
                           const SizedBox(height: 6),
                           Text(
                             '${_productImages.length}/${ProductImageCarousel.maxImages} images sélectionnées',
-                            style: Theme.of(context).textTheme.bodySmall
-                                ?.copyWith(
-                                  color: const Color(0xFF8D6E63),
-                                ),
+                            style: Theme.of(context)
+                                .textTheme
+                                .bodySmall
+                                ?.copyWith(color: const Color(0xFF8D6E63)),
                           ),
                           if (_showImageError) ...[
                             const SizedBox(height: 8),
@@ -290,58 +297,116 @@ class _AddProductPageState extends State<AddProductPage> {
                       ),
                     ),
                     const SizedBox(height: 18),
+                    // ── Titre (= title dans Deal) ───────────────────────────
                     _TextFieldSection(
-                      controller: _productController,
-                      hintText: 'Produit',
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty
-                          ? 'Nom du produit requis'
-                          : null,
+                      controller: _titleController,
+                      hintText: 'Titre de l\'offre',
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Titre requis';
+                        }
+                        if (value.trim().length < 3 ||
+                            value.trim().length > 120) {
+                          return 'Entre 3 et 120 caractères';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 10),
+                    // ── Description ────────────────────────────────────────
                     _TextFieldSection(
                       controller: _descriptionController,
                       hintText: 'Description',
                       maxLines: 4,
-                      validator: (value) =>
-                          value == null || value.trim().isEmpty
-                          ? 'Description requise'
-                          : null,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Description requise';
+                        }
+                        if (value.trim().length < 10 ||
+                            value.trim().length > 2000) {
+                          return 'Entre 10 et 2000 caractères';
+                        }
+                        return null;
+                      },
                     ),
                     const SizedBox(height: 10),
+                    // ── Code postal (= postalCode dans Deal) ───────────────
                     _TextFieldSection(
-                      controller: _cityController,
-                      hintText: 'Ville',
+                      controller: _postalCodeController,
+                      hintText: 'Code postal',
+                      keyboardType: TextInputType.number,
                       validator: (value) =>
                           value == null || value.trim().isEmpty
-                          ? 'Ville requise'
-                          : null,
+                              ? 'Code postal requis'
+                              : null,
                     ),
                     const SizedBox(height: 10),
+                    // ── Nombre de lots (= maxWinnerCount dans Deal) ─────────
+                    _TextFieldSection(
+                      controller: _maxWinnerController,
+                      hintText: 'Nombre de lots disponibles',
+                      keyboardType: TextInputType.number,
+                      validator: (value) {
+                        if (value == null || value.trim().isEmpty) {
+                          return 'Nombre de lots requis';
+                        }
+                        final n = int.tryParse(value.trim());
+                        if (n == null || n < 1) {
+                          return 'Doit être un entier ≥ 1';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    // ── Denrée alimentaire (= isFoodSupply dans Deal) ───────
+                    Container(
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8F9FF),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: const Color(0xFFFFE0B2)),
+                      ),
+                      child: SwitchListTile(
+                        title: const Text(
+                          "Il s'agit de nourriture",
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Color(0xFF3E2723),
+                          ),
+                        ),
+                        subtitle: const Text(
+                          'Denrée alimentaire',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Color(0xFF8D6E63),
+                          ),
+                        ),
+                        value: _isFoodSupply,
+                        activeColor: const Color(0xFFEF6C00),
+                        onChanged: (bool value) {
+                          setState(() {
+                            _isFoodSupply = value;
+                          });
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // ── Tags ───────────────────────────────────────────────
                     DropdownButtonFormField<String>(
-                      initialValue: _selectedTag,
+                      value: _selectedTag,
                       isExpanded: true,
                       decoration: _inputDecoration('Tags'),
                       items: const [
-                        DropdownMenuItem(
-                          value: 'Maison',
-                          child: Text('Maison'),
-                        ),
+                        DropdownMenuItem(value: 'Maison', child: Text('Maison')),
                         DropdownMenuItem(value: 'Déco', child: Text('Déco')),
+                        DropdownMenuItem(value: 'Cuisine', child: Text('Cuisine')),
+                        DropdownMenuItem(value: 'Jardin', child: Text('Jardin')),
                         DropdownMenuItem(
-                          value: 'Cuisine',
-                          child: Text('Cuisine'),
-                        ),
-                        DropdownMenuItem(
-                          value: 'Jardin',
-                          child: Text('Jardin'),
+                          value: 'Alimentaire',
+                          child: Text('Alimentaire'),
                         ),
                       ],
                       onChanged: (value) {
-                        if (value == null || _tags.contains(value)) {
-                          return;
-                        }
-
+                        if (value == null || _tags.contains(value)) return;
                         setState(() {
                           _selectedTag = value;
                           _addTag(value);
@@ -411,11 +476,8 @@ class _AddProductPageState extends State<AddProductPage> {
     );
   }
 
-  void _addTag(String? value) {
-    if (value == null || _tags.contains(value)) {
-      return;
-    }
-
+  void _addTag(String value) {
+    if (_tags.contains(value)) return;
     _tags.add(value);
   }
 
@@ -433,20 +495,40 @@ class _AddProductPageState extends State<AddProductPage> {
       _showImageError = !hasImages;
     });
 
-    if (!isFormValid || !hasImages) {
-      return;
+    if (!isFormValid || !hasImages) return;
+
+    _submitDeal();
+  }
+
+  Future<void> _submitDeal() async {
+    try {
+      final maxWinners = int.tryParse(_maxWinnerController.text.trim()) ?? 1;
+
+      final deal = Deal(
+        id: '',
+        sellerProfileId: widget.sellerProfileId,
+        title: _titleController.text.trim(),
+        description: _descriptionController.text.trim(),
+        postalCode: _postalCodeController.text.trim(),
+        maxWinnerCount: maxWinners,
+        isFoodSupply: _isFoodSupply,
+        state: DealState.open,
+      );
+
+      await widget.dealRepository.create(deal);
+
+      // TODO: uploader les images (_productImages) liées au deal créé.
+
+      if (!mounted) return;
+      Navigator.pop(context, true);
+    } on Object catch (_) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text("Impossible de créer l'offre pour le moment."),
+        ),
+      );
     }
-
-    ProductsData.addProduct(
-      article: _productController.text.trim(),
-      vendeur: 'Moi',
-      description: _descriptionController.text.trim(),
-      ville: _cityController.text.trim(),
-      tags: List<String>.from(_tags),
-      images: List<Uint8List>.from(_productImages),
-    );
-
-    Navigator.pop(context, true);
   }
 }
 
@@ -456,12 +538,14 @@ class _TextFieldSection extends StatelessWidget {
     required this.hintText,
     this.maxLines = 1,
     this.validator,
+    this.keyboardType = TextInputType.text,
   });
 
   final TextEditingController controller;
   final String hintText;
   final int maxLines;
   final String? Function(String?)? validator;
+  final TextInputType keyboardType;
 
   @override
   Widget build(BuildContext context) {
@@ -469,6 +553,7 @@ class _TextFieldSection extends StatelessWidget {
       controller: controller,
       maxLines: maxLines,
       validator: validator,
+      keyboardType: keyboardType,
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,

@@ -39,11 +39,31 @@ class SharePlaceApp extends StatelessWidget {
         AppRoutes.myDeals: (_) => const MyDealsPage(),
         AppRoutes.login: (_) => const LoginPage(),
         AppRoutes.register: (_) => const RegistrationPage(),
-        AppRoutes.addProduct: (_) => const AddProductPage(),
         AppRoutes.forgotPassword: (_) => const ForgotPasswordPage(),
         AppRoutes.profileVerification: (_) => const AccountVerificationPage(),
         AppRoutes.search: (_) => const SearchWithFilterPage(),
         AppRoutes.history: (_) => const HistoryPage(),
+      },
+      onGenerateRoute: (settings) {
+        if (settings.name == AppRoutes.addProduct) {
+          final args = settings.arguments as Map<String, dynamic>?;
+
+          // Fallback : si la page est ouverte sans arguments, on instancie un repo par défaut.
+          final DealRepository dealRepository =
+              args?['dealRepository'] as DealRepository? ??
+                  SupabaseDealRepository();
+          final String sellerProfileId =
+              args?['sellerProfileId'] as String? ?? '';
+
+          return MaterialPageRoute<bool>(
+            settings: settings,
+            builder: (_) => AddProductPage(
+              dealRepository: dealRepository,
+              sellerProfileId: sellerProfileId,
+            ),
+          );
+        }
+        return null; // Laisse `routes` gérer les autres routes.
       },
     );
   }
