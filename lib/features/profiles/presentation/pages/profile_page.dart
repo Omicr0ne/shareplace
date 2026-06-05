@@ -4,7 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/core/widgets/app_header.dart';
+import 'package:shareplace/core/widgets/app_page_scaffold.dart';
 import 'package:shareplace/features/auth/data/auth_service.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 import 'package:shareplace/features/profiles/domain/entities/profile.dart';
@@ -56,54 +56,51 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final profile = _profile;
     if (profile == null) {
-      return const Scaffold(
+      return const AppPageScaffold(
+        title: 'Profil',
+        currentRoute: AppRoutes.profile,
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 520),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
-              children: [
-                AppHeader(
-                  title: 'Profil',
-                  onBack: _goHome,
+    return AppPageScaffold(
+      title: 'Profil',
+      currentRoute: AppRoutes.profile,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 520),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+            children: [
+              Align(
+                child: ProfileAvatar(
+                  placeholderUrl: _placeholderAvatarUrl,
+                  imageUrl: profile.profilePictureUrl,
+                  imageBytes: _selectedImageBytes,
+                  onPickImage: _pickProfilePicture,
+                  onDeleteImage: _deleteProfilePicture,
                 ),
-                const SizedBox(height: 32),
-                Align(
-                  child: ProfileAvatar(
-                    placeholderUrl: _placeholderAvatarUrl,
-                    imageUrl: profile.profilePictureUrl,
-                    imageBytes: _selectedImageBytes,
-                    onPickImage: _pickProfilePicture,
-                    onDeleteImage: _deleteProfilePicture,
-                  ),
-                ),
-                const SizedBox(height: 32),
-                ProfileVerificationButton(
-                  status: profile.studentVerificationStatus,
-                  onPressed: _goProfileVerification,
-                ),
-                const SizedBox(height: 24),
-                ProfileIdentityFields(
-                  firstName: profile.firstName,
-                  lastName: profile.lastName,
-                  onFirstNameChanged: _updateFirstName,
-                  onLastNameChanged: _updateLastName,
-                ),
-                const SizedBox(height: 24),
-                ProfileDescriptionField(
-                  initialDescription: profile.description,
-                  onChanged: _updateDescription,
-                ),
-                const SizedBox(height: 24),
-                ProfileLogoutButton(onPressed: _showSignOutConfirmation),
-              ],
-            ),
+              ),
+              const SizedBox(height: 32),
+              ProfileVerificationButton(
+                status: profile.studentVerificationStatus,
+                onPressed: _goProfileVerification,
+              ),
+              const SizedBox(height: 24),
+              ProfileIdentityFields(
+                firstName: profile.firstName,
+                lastName: profile.lastName,
+                onFirstNameChanged: _updateFirstName,
+                onLastNameChanged: _updateLastName,
+              ),
+              const SizedBox(height: 24),
+              ProfileDescriptionField(
+                initialDescription: profile.description,
+                onChanged: _updateDescription,
+              ),
+              const SizedBox(height: 24),
+              ProfileLogoutButton(onPressed: _showSignOutConfirmation),
+            ],
           ),
         ),
       ),
@@ -173,14 +170,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _updateLastName(String lastName) {
     _profile = _profile?.copyWith(lastName: lastName);
-  }
-
-  void _goHome() {
-    unawaited(
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.deals, (_) => false),
-    );
   }
 
   void _goProfileVerification() {

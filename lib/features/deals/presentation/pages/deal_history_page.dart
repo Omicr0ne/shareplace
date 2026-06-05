@@ -1,7 +1,6 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/core/widgets/app_page_scaffold.dart';
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/repositories/deal_repository.dart';
@@ -43,26 +42,9 @@ class _HistoryPageState extends State<HistoryPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: Colors.white,
-      appBar: AppBar(
-        backgroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        title: const Text(
-          'Historique',
-          style: TextStyle(
-            fontSize: 26,
-            fontWeight: FontWeight.bold,
-            color: Color(0xFFFF841D),
-          ),
-        ),
-        leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: Colors.black),
-          onPressed: _goHome,
-          tooltip: 'Retour à l’accueil',
-        ),
-      ),
+    return AppPageScaffold(
+      title: 'Historique',
+      currentRoute: AppRoutes.dealHistory,
       body: FutureBuilder<_HistoryData>(
         future: _historyFuture,
         builder: (context, snapshot) {
@@ -121,8 +103,23 @@ class _HistoryPageState extends State<HistoryPage> {
             return bDate.compareTo(aDate);
           });
 
+    final hydratedClosedDeals = await Future.wait(
+      closedDeals.map((deal) async {
+        if (_coverImageForDeal(deal) != null) {
+          return deal;
+        }
+
+        try {
+          final detailedDeal = await _dealRepository.getById(deal.id);
+          return detailedDeal;
+        } on Object {
+          return deal;
+        }
+      }),
+    );
+
     return _HistoryData(
-      deals: closedDeals,
+      deals: hydratedClosedDeals,
       currentProfileId: currentProfile.id,
     );
   }
@@ -132,6 +129,8 @@ class _HistoryPageState extends State<HistoryPage> {
     required String? currentProfileId,
   }) {
     final formattedDate = _formatDate(deal.updatedAt ?? deal.createdAt);
+    final coverImageUrl = _coverImageForDeal(deal) ?? _fallbackImageUrl;
+
     return InkWell(
       borderRadius: BorderRadius.circular(18),
       onTap: () => _openDealDetails(deal, currentProfileId),
@@ -165,7 +164,7 @@ class _HistoryPageState extends State<HistoryPage> {
                 ClipRRect(
                   borderRadius: BorderRadius.circular(16),
                   child: Image.network(
-                    _fallbackImageUrl,
+                    coverImageUrl,
                     width: 120,
                     height: 100,
                     fit: BoxFit.cover,
@@ -237,14 +236,6 @@ class _HistoryPageState extends State<HistoryPage> {
     ).push(MaterialPageRoute<void>(builder: (context) => page));
   }
 
-  void _goHome() {
-    unawaited(
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.deals, (_) => false),
-    );
-  }
-
   String _formatDate(DateTime? value) {
     if (value == null) {
       return '--/--/----';
@@ -253,6 +244,17 @@ class _HistoryPageState extends State<HistoryPage> {
     final month = value.month.toString().padLeft(2, '0');
     final year = value.year.toString();
     return '$day/$month/$year';
+  }
+
+  String? _coverImageForDeal(Deal deal) {
+    for (final imageUrl in deal.imageUrls) {
+      final trimmedUrl = imageUrl.trim();
+      if (trimmedUrl.isNotEmpty) {
+        return trimmedUrl;
+      }
+    }
+
+    return null;
   }
 }
 

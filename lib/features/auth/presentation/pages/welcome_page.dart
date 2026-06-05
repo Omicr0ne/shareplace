@@ -53,16 +53,6 @@ class WelcomePage extends StatelessWidget {
                         color: const Color(0xFF3E2723),
                       ),
                     ),
-                    const SizedBox(height: 12),
-                    // Phrase de slogan.
-                    Text(
-                      'Slogan à définir',
-                      textAlign: TextAlign.center,
-                      style: theme.textTheme.titleMedium?.copyWith(
-                        color: const Color(0xFF5D4037),
-                        height: 1.35,
-                      ),
-                    ),
                     const SizedBox(height: 32),
                     // Boutons d'action.
                     Row(

@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
@@ -17,6 +19,7 @@ void main() {
     description: 'Vaisselle propre disponible rapidement.',
     postalCode: '75001',
     maxWinnerCount: 3,
+    tags: const ['Cuisine', 'Vaisselle'],
   );
 
   testWidgets('buyer interest is for one lot only', (tester) async {
@@ -39,6 +42,8 @@ void main() {
     );
     await tester.pumpAndSettle();
 
+    expect(find.text('Cuisine'), findsOneWidget);
+    expect(find.text('Vaisselle'), findsOneWidget);
     expect(find.text('Quantité souhaitée :'), findsNothing);
 
     await tester.tap(find.text('Je suis intéressé'));
@@ -162,6 +167,12 @@ class _FakeDealRepository implements DealRepository {
     addedDealId = dealId;
     addedApplicantProfileId = applicantProfileId;
   }
+
+  @override
+  Future<Deal> addImages({
+    required Deal deal,
+    required List<Uint8List> images,
+  }) async => deal;
 
   @override
   Future<void> cancel(String id) async {}

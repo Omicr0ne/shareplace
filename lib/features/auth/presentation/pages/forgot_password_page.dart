@@ -115,16 +115,6 @@ class _PageHeader extends StatelessWidget {
       child: Stack(
         alignment: Alignment.center,
         children: [
-          Align(
-            alignment: Alignment.centerLeft,
-            child: IconButton(
-              onPressed: () => Navigator.maybePop(context),
-              icon: const Icon(Icons.arrow_back),
-              color: Colors.white,
-              padding: EdgeInsets.zero,
-              splashRadius: 22,
-            ),
-          ),
           Text(
             title,
             style: const TextStyle(

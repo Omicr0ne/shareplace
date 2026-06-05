@@ -3,12 +3,12 @@ import 'package:flutter/material.dart';
 class AppHeader extends StatelessWidget {
   const AppHeader({
     required this.title,
-    required this.onBack,
+    this.onMenuPressed,
     super.key,
   });
 
   final String title;
-  final VoidCallback onBack;
+  final VoidCallback? onMenuPressed;
 
   @override
   Widget build(BuildContext context) {
@@ -19,12 +19,14 @@ class AppHeader extends StatelessWidget {
         children: [
           Align(
             alignment: Alignment.centerLeft,
-            child: IconButton(
-              key: const Key('app-header-back-button'),
-              tooltip: 'Accueil',
-              onPressed: onBack,
-              icon: const Icon(Icons.home),
-            ),
+            child: onMenuPressed == null
+                ? const SizedBox(width: 48)
+                : IconButton(
+                    key: const Key('app-header-menu-button'),
+                    tooltip: 'Menu',
+                    onPressed: onMenuPressed,
+                    icon: const Icon(Icons.menu),
+                  ),
           ),
           Text(
             title,

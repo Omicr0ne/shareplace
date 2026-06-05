@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/entities/deal_application.dart';
 import 'package:shareplace/features/deals/domain/entities/deal_search_filters.dart';
@@ -8,6 +10,7 @@ abstract interface class DealRepository {
   Future<List<Deal>> getOpenDeals();
   Future<List<Deal>> searchOpenDeals(DealSearchFilters filters);
   Future<Deal> create(Deal deal);
+  Future<Deal> addImages({required Deal deal, required List<Uint8List> images});
   Future<Deal> update(Deal deal);
   Future<void> cancel(String id);
   Future<Map<String, int>> countApplicationsByDealIds(List<String> dealIds);

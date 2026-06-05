@@ -161,16 +161,6 @@ class _SignUpPageState extends State<SignUpPage> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: IconButton(
-                        onPressed: () => Navigator.maybePop(context),
-                        icon: const Icon(Icons.arrow_back),
-                        color: _textColor,
-                        padding: EdgeInsets.zero,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
                     const Text(
                       'Créer un compte',
                       textAlign: TextAlign.center,

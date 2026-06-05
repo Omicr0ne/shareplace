@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
@@ -267,6 +269,12 @@ class _FakeDealRepository implements DealRepository {
     required String applicantProfileId,
     int quantity = 1,
   }) async {}
+
+  @override
+  Future<Deal> addImages({
+    required Deal deal,
+    required List<Uint8List> images,
+  }) async => deal;
 
   @override
   Future<void> acceptApplication(String applicationId) async {}

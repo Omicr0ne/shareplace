@@ -1,15 +1,16 @@
 import 'package:flutter/material.dart';
+import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/core/widgets/app_page_scaffold.dart';
 
 class LegalNoticesPage extends StatelessWidget {
   const LegalNoticesPage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mentions Légales'),
-      ),
-      body: const SingleChildScrollView(
+    return const AppPageScaffold(
+      title: 'Mentions légales',
+      currentRoute: AppRoutes.legalNotices,
+      body: SingleChildScrollView(
         padding: EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

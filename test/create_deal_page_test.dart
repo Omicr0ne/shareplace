@@ -91,6 +91,210 @@ void main() {
     expect(tagRepository.createdDealId, 'created-deal-id');
     expect(tagRepository.createdTags, ['Maison']);
   });
+
+  testWidgets('uploads selected images after creating the deal', (
+    tester,
+  ) async {
+    final dealRepository = _FakeDealRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CreateDealPage(
+          dealRepository: dealRepository,
+          profileRepository: const _FakeProfileRepository(
+            profile: Profile(
+              id: 'current-profile-id',
+              firstName: 'Lina',
+              lastName: 'Martin',
+            ),
+          ),
+          dealTagRepository: _FakeDealTagRepository(),
+          initialProductImages: [_transparentPng],
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, "Titre de l'offre"),
+      'Canape convertible',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Description'),
+      'Canape deux places en bon etat.',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Code postal'),
+      '69001',
+    );
+    await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Maison').last);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Continuer'));
+    await tester.tap(find.text('Continuer'));
+    await tester.pumpAndSettle();
+
+    expect(dealRepository.imageDealId, 'created-deal-id');
+    expect(dealRepository.uploadedImages, [_transparentPng]);
+  });
+
+  testWidgets('creates a new tag from the create deal form', (tester) async {
+    final dealRepository = _FakeDealRepository();
+    final tagRepository = _FakeDealTagRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CreateDealPage(
+          dealRepository: dealRepository,
+          profileRepository: const _FakeProfileRepository(
+            profile: Profile(
+              id: 'current-profile-id',
+              firstName: 'Lina',
+              lastName: 'Martin',
+            ),
+          ),
+          dealTagRepository: tagRepository,
+          initialProductImages: [_transparentPng],
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, "Titre de l'offre"),
+      'Canape convertible',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Description'),
+      'Canape deux places en bon etat.',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Code postal'),
+      '69001',
+    );
+    await tester.ensureVisible(
+      find.byKey(const Key('create-deal-new-tag-field')),
+    );
+    await tester.enterText(
+      find.byKey(const Key('create-deal-new-tag-field')),
+      'Bricolage',
+    );
+    await tester.tap(find.text('Ajouter le tag'));
+    await tester.pumpAndSettle();
+
+    expect(tagRepository.createdTagLabels, ['Bricolage']);
+    expect(tagRepository.createdByProfileIds, ['current-profile-id']);
+    expect(find.widgetWithText(Chip, 'Bricolage'), findsOneWidget);
+
+    await tester.ensureVisible(find.text('Continuer'));
+    await tester.tap(find.text('Continuer'));
+    await tester.pumpAndSettle();
+
+    expect(dealRepository.createdDeal?.sellerProfileId, 'current-profile-id');
+    expect(tagRepository.createdTags, ['Bricolage']);
+  });
+
+  testWidgets('does not create a deal when the last selected tag is removed', (
+    tester,
+  ) async {
+    final dealRepository = _FakeDealRepository();
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CreateDealPage(
+          dealRepository: dealRepository,
+          profileRepository: const _FakeProfileRepository(
+            profile: Profile(
+              id: 'current-profile-id',
+              firstName: 'Lina',
+              lastName: 'Martin',
+            ),
+          ),
+          dealTagRepository: _FakeDealTagRepository(),
+          initialProductImages: [_transparentPng],
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, "Titre de l'offre"),
+      'Canape convertible',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Description'),
+      'Canape deux places en bon etat.',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Code postal'),
+      '69001',
+    );
+    await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Maison').last);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byIcon(Icons.cancel).last);
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Continuer'));
+    await tester.tap(find.text('Continuer'));
+    await tester.pumpAndSettle();
+
+    expect(dealRepository.createdDeal, isNull);
+    expect(find.text('Tag requis'), findsOneWidget);
+  });
+
+  testWidgets('keeps the form open when tag association fails', (tester) async {
+    final dealRepository = _FakeDealRepository();
+    final tagRepository = _FakeDealTagRepository(throwOnSetTags: true);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: CreateDealPage(
+          dealRepository: dealRepository,
+          profileRepository: const _FakeProfileRepository(
+            profile: Profile(
+              id: 'current-profile-id',
+              firstName: 'Lina',
+              lastName: 'Martin',
+            ),
+          ),
+          dealTagRepository: tagRepository,
+          initialProductImages: [_transparentPng],
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.widgetWithText(TextFormField, "Titre de l'offre"),
+      'Canape convertible',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Description'),
+      'Canape deux places en bon etat.',
+    );
+    await tester.enterText(
+      find.widgetWithText(TextFormField, 'Code postal'),
+      '69001',
+    );
+    await tester.ensureVisible(find.byType(DropdownButtonFormField<String>));
+    await tester.tap(find.byType(DropdownButtonFormField<String>));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Maison').last);
+    await tester.pumpAndSettle();
+
+    await tester.ensureVisible(find.text('Continuer'));
+    await tester.tap(find.text('Continuer'));
+    await tester.pumpAndSettle();
+
+    expect(find.byType(CreateDealPage), findsOneWidget);
+    expect(dealRepository.cancelledDealId, 'created-deal-id');
+    expect(
+      find.text("Impossible de créer l'offre pour le moment."),
+      findsOneWidget,
+    );
+  });
 }
 
 final _transparentPng = Uint8List.fromList([
@@ -186,6 +390,9 @@ class _FakeProfileRepository implements ProfileRepository {
 
 class _FakeDealRepository implements DealRepository {
   Deal? createdDeal;
+  String? cancelledDealId;
+  String? imageDealId;
+  List<Uint8List>? uploadedImages;
 
   @override
   Future<void> addApplication({
@@ -198,7 +405,9 @@ class _FakeDealRepository implements DealRepository {
   Future<void> acceptApplication(String applicationId) async {}
 
   @override
-  Future<void> cancel(String id) async {}
+  Future<void> cancel(String id) async {
+    cancelledDealId = id;
+  }
 
   @override
   Future<Map<String, int>> countApplicationsByDealIds(
@@ -211,6 +420,21 @@ class _FakeDealRepository implements DealRepository {
   Future<Deal> create(Deal deal) async {
     createdDeal = deal;
     return deal.copyWith(id: 'created-deal-id');
+  }
+
+  @override
+  Future<Deal> addImages({
+    required Deal deal,
+    required List<Uint8List> images,
+  }) async {
+    imageDealId = deal.id;
+    uploadedImages = images.map(Uint8List.fromList).toList(growable: false);
+    return deal.copyWith(
+      imageUrls: [
+        for (var index = 0; index < images.length; index += 1)
+          'https://example.com/deals/${deal.id}/$index.png',
+      ],
+    );
   }
 
   @override
@@ -263,18 +487,35 @@ class _FakeDealRepository implements DealRepository {
 class _FakeDealTagRepository implements DealTagRepository {
   _FakeDealTagRepository({
     this.availableTags = const ['Maison', 'Déco', 'Cuisine', 'Jardin'],
+    this.throwOnSetTags = false,
   });
 
   final List<String> availableTags;
+  final bool throwOnSetTags;
   String? createdDealId;
   List<String>? createdTags;
+  final List<String> createdTagLabels = [];
+  final List<String> createdByProfileIds = [];
 
   @override
   Future<List<String>> getAvailableTags() async => availableTags;
 
   @override
   Future<void> setTagsForDeal(String dealId, List<String> tags) async {
+    if (throwOnSetTags) {
+      throw StateError('Unable to associate tags.');
+    }
     createdDealId = dealId;
     createdTags = List<String>.from(tags);
+  }
+
+  @override
+  Future<String> createTag({
+    required String label,
+    required String createdByProfileId,
+  }) async {
+    createdTagLabels.add(label);
+    createdByProfileIds.add(createdByProfileId);
+    return label;
   }
 }

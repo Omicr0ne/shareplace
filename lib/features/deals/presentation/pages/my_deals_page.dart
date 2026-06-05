@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/core/widgets/app_header.dart';
+import 'package:shareplace/core/widgets/app_page_scaffold.dart';
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/entities/deal_application.dart';
@@ -56,35 +56,30 @@ class _MyDealsPageState extends State<MyDealsPage> {
   @override
   Widget build(BuildContext context) {
     final visibleDeals = widget.deals ?? _loadedDeals;
-    return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 640),
-            child: ListView(
-              padding: const EdgeInsets.fromLTRB(24, 28, 24, 40),
-              children: [
-                AppHeader(
-                  title: 'Mes offres',
-                  onBack: () => _goHome(context),
-                ),
-                const SizedBox(height: 24),
-                if (_loadError != null)
-                  const _MyDealsErrorState()
-                else if (visibleDeals == null)
-                  const Center(child: CircularProgressIndicator())
-                else if (visibleDeals.isEmpty)
-                  const _EmptyMyDealsState()
-                else
-                  for (final deal in visibleDeals) ...[
-                    MyDealCard(
-                      deal: deal,
-                      onImageTap: () => _openDealDetails(deal),
-                    ),
-                    const SizedBox(height: 16),
-                  ],
-              ],
-            ),
+    return AppPageScaffold(
+      title: 'Mes offres',
+      currentRoute: AppRoutes.myDeals,
+      body: Center(
+        child: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 640),
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 24, 24, 40),
+            children: [
+              if (_loadError != null)
+                const _MyDealsErrorState()
+              else if (visibleDeals == null)
+                const Center(child: CircularProgressIndicator())
+              else if (visibleDeals.isEmpty)
+                const _EmptyMyDealsState()
+              else
+                for (final deal in visibleDeals) ...[
+                  MyDealCard(
+                    deal: deal,
+                    onImageTap: () => _openDealDetails(deal),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+            ],
           ),
         ),
       ),
@@ -213,6 +208,8 @@ class _MyDealsPageState extends State<MyDealsPage> {
     required int interestedCount,
     String? counterpartPhone,
   }) {
+    final coverImageUrl = _coverImageForDeal(deal);
+
     return MyDealSummary(
       id: deal.id,
       role: MyDealRole.seller,
@@ -221,7 +218,7 @@ class _MyDealsPageState extends State<MyDealsPage> {
           : MyDealProgress.pending,
       title: deal.title,
       description: deal.description,
-      coverImageUrl: _fallbackCoverImageUrl,
+      coverImageUrl: coverImageUrl,
       interestedCount: interestedCount,
       counterpartPhone: counterpartPhone,
     );
@@ -232,15 +229,25 @@ class _MyDealsPageState extends State<MyDealsPage> {
     DealApplicationRecord application, {
     String? counterpartPhone,
   }) {
+    final coverImageUrl = _coverImageForDeal(deal);
+
     return MyDealSummary(
       id: deal.id,
       role: MyDealRole.interested,
       progress: _progressForApplication(application.status),
       title: deal.title,
       description: deal.description,
-      coverImageUrl: _fallbackCoverImageUrl,
+      coverImageUrl: coverImageUrl,
       counterpartPhone: counterpartPhone,
     );
+  }
+
+  String _coverImageForDeal(Deal deal) {
+    if (deal.imageUrls.isEmpty) {
+      return _fallbackCoverImageUrl;
+    }
+
+    return deal.imageUrls.first;
   }
 
   MyDealProgress _progressForApplication(DealApplicationStatus status) {
@@ -279,14 +286,6 @@ class _MyDealsPageState extends State<MyDealsPage> {
         const SnackBar(content: Text("Impossible d'ouvrir l'offre.")),
       );
     }
-  }
-
-  void _goHome(BuildContext context) {
-    unawaited(
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.deals, (_) => false),
-    );
   }
 }
 

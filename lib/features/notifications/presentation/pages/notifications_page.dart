@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
+import 'package:shareplace/core/widgets/app_page_scaffold.dart';
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/repositories/deal_repository.dart';
@@ -68,61 +69,10 @@ class _NotificationsPageState extends State<NotificationsPage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFF1E1E1E),
-      body: SafeArea(
-        child: Align(
-          alignment: Alignment.bottomCenter,
-          child: Container(
-            width: double.infinity,
-            height: MediaQuery.of(context).size.height * 0.9,
-            padding: const EdgeInsets.only(top: 16),
-            decoration: const BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.only(
-                topLeft: Radius.circular(40),
-                topRight: Radius.circular(40),
-              ),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      IconButton(
-                        icon: const Icon(
-                          Icons.arrow_back,
-                          color: Colors.black,
-                          size: 28,
-                        ),
-                        onPressed: _goHome,
-                        padding: EdgeInsets.zero,
-                        constraints: const BoxConstraints(),
-                      ),
-                      const SizedBox(height: 10),
-                      const Center(
-                        child: Text(
-                          'Notifications',
-                          style: TextStyle(
-                            fontSize: 26,
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFFFF841D),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Expanded(child: _buildBody()),
-              ],
-            ),
-          ),
-        ),
-      ),
+    return AppPageScaffold(
+      title: 'Notifications',
+      currentRoute: AppRoutes.notifications,
+      body: _buildBody(),
     );
   }
 
@@ -374,13 +324,5 @@ class _NotificationsPageState extends State<NotificationsPage> {
         const SnackBar(content: Text("Impossible d'ouvrir l'offre.")),
       );
     }
-  }
-
-  void _goHome() {
-    unawaited(
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.deals, (_) => false),
-    );
   }
 }

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/entities/deal_application.dart';
 
@@ -23,6 +24,48 @@ void main() {
       expect(deal.maxWinnerCount, 2);
       expect(deal.state, DealState.closed);
       expect(deal.isFoodSupply, isTrue);
+    });
+
+    test('maps Supabase nested deal tags to Deal tags', () {
+      final deal = Deal.fromJson({
+        'id': 'deal-id',
+        'seller_profile_id': 'seller-id',
+        'title': 'Canapé convertible',
+        'description': 'Canapé deux places en bon état.',
+        'postal_code': '69001',
+        'deal_tags': [
+          {
+            'tags': {'label': 'Maison', 'state': 'approved'},
+          },
+          {
+            'tags': {'label': 'Déco', 'state': 'approved'},
+          },
+          {
+            'tags': {'label': 'Brouillon', 'state': 'pending'},
+          },
+        ],
+      });
+
+      expect(deal.tags, ['Maison', 'Déco']);
+    });
+
+    test('maps Supabase nested deal images to Deal image URLs', () {
+      final deal = Deal.fromJson({
+        'id': 'deal-id',
+        'seller_profile_id': 'seller-id',
+        'title': 'Canapé convertible',
+        'description': 'Canapé deux places en bon état.',
+        'postal_code': '69001',
+        'deal_images': [
+          {'url': 'https://example.com/first.png', 'position': 2},
+          {'url': 'https://example.com/cover.png', 'position': 1},
+        ],
+      });
+
+      expect(deal.imageUrls, [
+        'https://example.com/cover.png',
+        'https://example.com/first.png',
+      ]);
     });
 
     test('maps Deal to Supabase json', () {
@@ -90,6 +133,16 @@ void main() {
       );
 
       expect(record.status, DealApplicationStatus.accepted);
+    });
+  });
+
+  group('dealImageStoragePathFromUrl', () {
+    test('extracts the storage path from a Supabase public URL', () {
+      final path = dealImageStoragePathFromUrl(
+        'https://hkwzowdcgqbruuvhshda.supabase.co/storage/v1/object/public/deal-images/deal-id/image.jpg',
+      );
+
+      expect(path, 'deal-id/image.jpg');
     });
   });
 }

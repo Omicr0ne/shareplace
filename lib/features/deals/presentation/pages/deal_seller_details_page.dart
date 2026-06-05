@@ -6,6 +6,7 @@ import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/entities/deal_application.dart';
 import 'package:shareplace/features/deals/domain/repositories/deal_repository.dart';
 import 'package:shareplace/features/deals/presentation/widgets/deal_image_carousel.dart';
+import 'package:shareplace/features/deals/presentation/widgets/deal_tag_chips.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 import 'package:shareplace/features/profiles/domain/entities/profile.dart';
 import 'package:shareplace/features/profiles/domain/repositories/profile_repository.dart';
@@ -221,7 +222,10 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                   ),
                   const SizedBox(height: 14),
                   // ── Carousel d'images ────────────────────────────────────
-                  DealImageCarousel(dealTitle: deal.title, images: const []),
+                  DealImageCarousel(
+                    dealTitle: deal.title,
+                    imageUrls: deal.imageUrls,
+                  ),
                   const SizedBox(height: 16),
                   // ── Badge denrée alimentaire ─────────────────────────────
                   if (deal.isFoodSupply) ...[
@@ -254,6 +258,10 @@ class _DealSellerDetailsPageState extends State<DealSellerDetailsPage> {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 12),
+                  ],
+                  if (deal.tags.isNotEmpty) ...[
+                    DealTagChips(tags: deal.tags),
                     const SizedBox(height: 12),
                   ],
                   // ── Code postal ──────────────────────────────────────────

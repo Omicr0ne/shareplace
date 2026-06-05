@@ -45,8 +45,15 @@ Future<void> main(List<String> arguments) async {
 Future<void> _seed(SupabaseClient client) async {
   stdout.writeln('Seeding Supabase...');
 
+  await client.from('tags').upsert(_seedTags, onConflict: 'id');
   await client.from('profiles').upsert(_seedProfiles, onConflict: 'id');
   await client.from('deals').upsert(_seedDeals, onConflict: 'id');
+  await client
+      .from('deal_tags')
+      .upsert(
+        _seedDealTags,
+        onConflict: 'deal_id,tag_id',
+      );
   await _seedProfileImages(client);
   await _seedDealImages(client);
   await client
@@ -66,6 +73,7 @@ Future<void> _reset(SupabaseClient client) async {
       .delete()
       .inFilter('id', _seedApplicationIds);
   await client.from('deal_images').delete().inFilter('deal_id', _seedDealIds);
+  await client.from('deal_tags').delete().inFilter('deal_id', _seedDealIds);
   await client
       .from('profiles')
       .update({'profile_picture_url': null})
@@ -399,6 +407,58 @@ const _seedDeals = <Map<String, Object?>>[
     'max_winner_count': 2,
     'state': 'open',
     'is_food_supply': true,
+  },
+];
+
+const _seedTags = <Map<String, Object?>>[
+  {
+    'id': 'eeeeeee1-eeee-eeee-eeee-eeeeeeeeeee1',
+    'label': 'Maison',
+    'normalized_label': 'maison',
+    'state': 'approved',
+  },
+  {
+    'id': 'eeeeeee2-eeee-eeee-eeee-eeeeeeeeeee2',
+    'label': 'Déco',
+    'normalized_label': 'deco',
+    'state': 'approved',
+  },
+  {
+    'id': 'eeeeeee3-eeee-eeee-eeee-eeeeeeeeeee3',
+    'label': 'Cuisine',
+    'normalized_label': 'cuisine',
+    'state': 'approved',
+  },
+  {
+    'id': 'eeeeeee4-eeee-eeee-eeee-eeeeeeeeeee4',
+    'label': 'Jardin',
+    'normalized_label': 'jardin',
+    'state': 'approved',
+  },
+  {
+    'id': 'eeeeeee5-eeee-eeee-eeee-eeeeeeeeeee5',
+    'label': 'Alimentaire',
+    'normalized_label': 'alimentaire',
+    'state': 'approved',
+  },
+];
+
+const _seedDealTags = <Map<String, Object?>>[
+  {
+    'deal_id': 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
+    'tag_id': 'eeeeeee1-eeee-eeee-eeee-eeeeeeeeeee1',
+  },
+  {
+    'deal_id': 'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
+    'tag_id': 'eeeeeee2-eeee-eeee-eeee-eeeeeeeeeee2',
+  },
+  {
+    'deal_id': 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2',
+    'tag_id': 'eeeeeee3-eeee-eeee-eeee-eeeeeeeeeee3',
+  },
+  {
+    'deal_id': 'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2',
+    'tag_id': 'eeeeeee5-eeee-eeee-eeee-eeeeeeeeeee5',
   },
 ];
 

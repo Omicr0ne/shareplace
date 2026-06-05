@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
 import 'package:shareplace/features/deals/domain/entities/deal_application.dart';
 import 'package:shareplace/features/deals/domain/entities/deal_search_filters.dart';
@@ -10,6 +12,13 @@ class SupabaseDealRepository implements DealRepository {
   const SupabaseDealRepository._(this._client);
 
   static const _applicationsTable = 'deal_applications';
+  static const _dealImagesTable = 'deal_images';
+  static const _dealImagesBucket = 'deal-images';
+  static const _dealImagesSelect = 'deal_images(url,position)';
+  static const _dealSelectColumns =
+      '*, deal_tags(tags(label,state)), $_dealImagesSelect';
+  static const _dealSelectColumnsWithTagFilter =
+      '*, deal_tags!inner(tags!inner(label,state)), $_dealImagesSelect';
 
   final SupabaseClient? _client;
 
@@ -29,24 +38,30 @@ class SupabaseDealRepository implements DealRepository {
   Future<Deal> getById(String id) async {
     final response = await _requireClient()
         .from('deals')
-        .select()
+        .select(_dealSelectColumns)
         .eq('id', id)
         .single();
 
-    return Deal.fromJson(Map<String, Object?>.from(response));
+    return _withSignedImageUrls(
+      Deal.fromJson(Map<String, Object?>.from(response)),
+    );
   }
 
   @override
   Future<List<Deal>> getBySellerProfileId(String sellerProfileId) async {
     final response = await _requireClient()
         .from('deals')
-        .select()
+        .select(_dealSelectColumns)
         .eq('seller_profile_id', sellerProfileId)
         .order('created_at', ascending: false);
 
-    return response
-        .map((json) => Deal.fromJson(Map<String, Object?>.from(json)))
-        .toList(growable: false);
+    return Future.wait(
+      response.map(
+        (json) => _withSignedImageUrls(
+          Deal.fromJson(Map<String, Object?>.from(json)),
+        ),
+      ),
+    );
   }
 
   @override
@@ -58,8 +73,8 @@ class SupabaseDealRepository implements DealRepository {
   Future<List<Deal>> searchOpenDeals(DealSearchFilters filters) async {
     final tags = filters.tags.where((tag) => tag.trim().isNotEmpty).toList();
     final selectColumns = tags.isEmpty
-        ? '*'
-        : '*, deal_tags!inner(tags!inner(label,state))';
+        ? _dealSelectColumns
+        : _dealSelectColumnsWithTagFilter;
     var query = _requireClient()
         .from('deals')
         .select(selectColumns)
@@ -96,9 +111,13 @@ class SupabaseDealRepository implements DealRepository {
 
     final response = await query.order('created_at', ascending: false);
 
-    return response
-        .map((json) => Deal.fromJson(Map<String, Object?>.from(json)))
-        .toList(growable: false);
+    return Future.wait(
+      response.map(
+        (json) => _withSignedImageUrls(
+          Deal.fromJson(Map<String, Object?>.from(json)),
+        ),
+      ),
+    );
   }
 
   @override
@@ -106,10 +125,46 @@ class SupabaseDealRepository implements DealRepository {
     final response = await _requireClient()
         .from('deals')
         .insert(deal.toJson())
-        .select()
+        .select(_dealSelectColumns)
         .single();
 
-    return Deal.fromJson(Map<String, Object?>.from(response));
+    return _withSignedImageUrls(
+      Deal.fromJson(Map<String, Object?>.from(response)),
+    );
+  }
+
+  @override
+  Future<Deal> addImages({
+    required Deal deal,
+    required List<Uint8List> images,
+  }) async {
+    if (images.isEmpty) {
+      return deal;
+    }
+
+    final client = _requireClient();
+    final rows = <Map<String, Object?>>[];
+    final timestamp = DateTime.now().toUtc().microsecondsSinceEpoch;
+    for (var index = 0; index < images.length; index += 1) {
+      final path = '${deal.id}/$timestamp-$index.jpg';
+      await client.storage
+          .from(_dealImagesBucket)
+          .uploadBinary(
+            path,
+            images[index],
+            fileOptions: const FileOptions(
+              contentType: 'image/jpeg',
+            ),
+          );
+      rows.add({
+        'deal_id': deal.id,
+        'url': client.storage.from(_dealImagesBucket).getPublicUrl(path),
+        'position': index,
+      });
+    }
+
+    await client.from(_dealImagesTable).insert(rows);
+    return getById(deal.id);
   }
 
   @override
@@ -118,10 +173,12 @@ class SupabaseDealRepository implements DealRepository {
         .from('deals')
         .update(deal.toJson())
         .eq('id', deal.id)
-        .select()
+        .select(_dealSelectColumns)
         .single();
 
-    return Deal.fromJson(Map<String, Object?>.from(response));
+    return _withSignedImageUrls(
+      Deal.fromJson(Map<String, Object?>.from(response)),
+    );
   }
 
   @override
@@ -306,6 +363,36 @@ class SupabaseDealRepository implements DealRepository {
 
     return client;
   }
+
+  Future<Deal> _withSignedImageUrls(Deal deal) async {
+    if (deal.imageUrls.isEmpty) {
+      return deal;
+    }
+
+    final storage = _requireClient().storage.from(_dealImagesBucket);
+    final signedUrls = <String>[];
+    for (final imageUrl in deal.imageUrls) {
+      final path = dealImageStoragePathFromUrl(imageUrl);
+      if (path == null) {
+        signedUrls.add(imageUrl);
+        continue;
+      }
+      signedUrls.add(await storage.createSignedUrl(path, 60 * 60));
+    }
+
+    return deal.copyWith(imageUrls: signedUrls);
+  }
+}
+
+String? dealImageStoragePathFromUrl(String value) {
+  const marker = '/object/public/${SupabaseDealRepository._dealImagesBucket}/';
+  final markerIndex = value.indexOf(marker);
+  if (markerIndex == -1) {
+    return value.trim().isEmpty ? null : value;
+  }
+
+  final path = value.substring(markerIndex + marker.length);
+  return path.isEmpty ? null : Uri.decodeFull(path);
 }
 
 DateTime? _toDateTime(Object? value) {

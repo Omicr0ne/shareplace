@@ -35,6 +35,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
   final _descriptionController = TextEditingController();
   final _postalCodeController = TextEditingController();
   final _maxWinnerController = TextEditingController(text: '1');
+  final _newTagController = TextEditingController();
   final _picker = ImagePicker();
 
   final List<String> _tags = [];
@@ -44,6 +45,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
   bool _showImageError = false;
   bool _isFoodSupply = false;
   bool _isSubmitting = false;
+  bool _isCreatingTag = false;
   List<String>? _availableTags;
 
   late final ProfileRepository _profileRepository =
@@ -86,6 +88,7 @@ class _CreateDealPageState extends State<CreateDealPage> {
     _descriptionController.dispose();
     _postalCodeController.dispose();
     _maxWinnerController.dispose();
+    _newTagController.dispose();
     super.dispose();
   }
 
@@ -461,8 +464,44 @@ class _CreateDealPageState extends State<CreateDealPage> {
                           _addTag(value);
                         });
                       },
-                      validator: (value) =>
-                          value == null && _tags.isEmpty ? 'Tag requis' : null,
+                      validator: (_) => _tags.isEmpty ? 'Tag requis' : null,
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            key: const Key('create-deal-new-tag-field'),
+                            controller: _newTagController,
+                            textInputAction: TextInputAction.done,
+                            onFieldSubmitted: (_) => unawaited(_createTag()),
+                            decoration: _inputDecoration(
+                              labelText: 'Nouveau tag',
+                              hintText: 'Nouveau tag',
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        SizedBox(
+                          height: 56,
+                          child: FilledButton(
+                            onPressed: _isCreatingTag
+                                ? null
+                                : () => unawaited(_createTag()),
+                            child: _isCreatingTag
+                                ? const SizedBox(
+                                    width: 16,
+                                    height: 16,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      color: Colors.white,
+                                    ),
+                                  )
+                                : const Text('Ajouter le tag'),
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 8),
                     Wrap(
@@ -538,7 +577,63 @@ class _CreateDealPageState extends State<CreateDealPage> {
   void _removeTag(String tag) {
     setState(() {
       _tags.remove(tag);
+      if (_selectedTag == tag) {
+        _selectedTag = null;
+      }
     });
+  }
+
+  Future<void> _createTag() async {
+    final label = _newTagController.text.trim();
+    if (label.isEmpty || _tags.contains(label)) {
+      return;
+    }
+
+    setState(() {
+      _isCreatingTag = true;
+    });
+
+    try {
+      final currentProfile = await _profileRepository.getCurrentProfile();
+      if (currentProfile == null) {
+        throw StateError('Pas de profil utilisateur trouvé.');
+      }
+      final createdTag = await _dealTagRepository.createTag(
+        label: label,
+        createdByProfileId: currentProfile.id,
+      );
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        final availableTags = List<String>.from(_availableTags ?? const []);
+        if (!availableTags.contains(createdTag)) {
+          availableTags
+            ..add(createdTag)
+            ..sort();
+        }
+        _availableTags = availableTags;
+        _selectedTag = createdTag;
+        _addTag(createdTag);
+        _newTagController.clear();
+      });
+    } on Object catch (error) {
+      debugPrint('Erreur lors de la création du tag : $error');
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Impossible de créer le tag pour le moment.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isCreatingTag = false;
+        });
+      }
+    }
   }
 
   void _submit() {
@@ -576,23 +671,23 @@ class _CreateDealPageState extends State<CreateDealPage> {
         isFoodSupply: _isFoodSupply,
       );
 
-      //soucis de gestion des tags (Mise en place d'une excemption pour
-      //isoler l'erreur de tag et ne pas bloquer la création du deal)
-      // 1. Création de l'offre
       final createdDeal = await widget.dealRepository.create(deal);
-
-      // 2. Ajout des tags (sécurisé dans un sous-try-catch pour
-      //isoler l'erreur)
       try {
         await _dealTagRepository.setTagsForDeal(createdDeal.id, _tags);
-      } on Object catch (tagError) {
-        // On affiche l'erreur des tags dans la console sans bloquer la
-        //validation du deal
-        debugPrint('Erreur lors de l’association des tags : $tagError');
+      } on Object {
+        await widget.dealRepository.cancel(createdDeal.id);
+        rethrow;
       }
 
-      //A faire(team): ajouter l'upload des images dans Supabase Storage
-      //et associer les URLs retournées à l'offre créée
+      try {
+        await widget.dealRepository.addImages(
+          deal: createdDeal,
+          images: List<Uint8List>.unmodifiable(_productImages),
+        );
+      } on Object {
+        await widget.dealRepository.cancel(createdDeal.id);
+        rethrow;
+      }
 
       if (!mounted) return;
       Navigator.pop(context, true);

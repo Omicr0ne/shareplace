@@ -2,7 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:shareplace/app/app_routes.dart';
-import 'package:shareplace/features/auth/data/auth_service.dart';
+import 'package:shareplace/core/widgets/app_page_scaffold.dart';
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_repository.dart';
 import 'package:shareplace/features/deals/data/repositories/supabase_deal_tag_repository.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
@@ -11,9 +11,9 @@ import 'package:shareplace/features/deals/domain/repositories/deal_repository.da
 import 'package:shareplace/features/deals/domain/repositories/deal_tag_repository.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_buyer_details_page.dart';
 import 'package:shareplace/features/deals/presentation/pages/deal_seller_details_page.dart';
+import 'package:shareplace/features/deals/presentation/widgets/deal_tag_chips.dart';
 import 'package:shareplace/features/profiles/data/repositories/supabase_profile_repository.dart';
 import 'package:shareplace/features/profiles/domain/repositories/profile_repository.dart';
-import 'package:shareplace/features/profiles/presentation/widgets/profile_logout_button.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({
@@ -32,7 +32,6 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  final _authService = AuthService();
   final _searchController = TextEditingController();
   final _postalCodeController = TextEditingController();
   late final ProfileRepository _profileRepository;
@@ -143,207 +142,68 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Color(0xFFEF6C00), Color(0xFFFFB74D)],
+    return AppPageScaffold(
+      title: 'SharePlace',
+      currentRoute: AppRoutes.deals,
+      body: FutureBuilder<_HomeData>(
+        future: _homeDataFuture,
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (snapshot.hasError) {
+            return Center(
+              child: Padding(
+                padding: const EdgeInsets.all(24),
+                child: Text(
+                  'Impossible de charger les offres.',
+                  style: Theme.of(context).textTheme.titleMedium,
+                  textAlign: TextAlign.center,
                 ),
               ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisAlignment: MainAxisAlignment.end,
-                children: [
-                  CircleAvatar(
-                    radius: 28,
-                    backgroundColor: Colors.white,
-                    child: Icon(
-                      Icons.home_outlined,
-                      color: Color(0xFFEF6C00),
-                      size: 30,
-                    ),
-                  ),
-                  SizedBox(height: 12),
-                  Text(
-                    'Menu',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            ListTile(
-              leading: const Icon(Icons.home_outlined),
-              title: const Text('Accueil'),
-              onTap: () => Navigator.pop(context),
-            ),
-            ListTile(
-              leading: const Icon(Icons.waving_hand_outlined),
-              title: const Text('Bienvenue'),
-              onTap: () {
-                Navigator.pop(context);
-                unawaited(
-                  Navigator.pushReplacementNamed(context, AppRoutes.welcome),
-                );
-              },
-            ),
-            const Divider(height: 1),
-            ListTile(
-              leading: const Icon(Icons.person_outline),
-              title: const Text('Profil'),
-              onTap: () {
-                Navigator.pop(context);
-                unawaited(
-                  Navigator.pushReplacementNamed(context, AppRoutes.profile),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.add_box_outlined),
-              title: const Text('Créer une offre'),
-              onTap: () async {
-                Navigator.pop(context);
-                await _openAddDealPage();
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.price_change_outlined),
-              title: const Text('Mes offres'),
-              onTap: () async {
-                Navigator.pop(context);
-                unawaited(
-                  Navigator.pushReplacementNamed(context, AppRoutes.myDeals),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.history_outlined),
-              title: const Text('Historique des offres'),
-              onTap: () async {
-                Navigator.pop(context);
-                unawaited(
-                  Navigator.pushReplacementNamed(
-                    context,
-                    AppRoutes.dealHistory,
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.notifications_outlined),
-              title: const Text('Notifications'),
-              onTap: () async {
-                Navigator.pop(context);
-                unawaited(
-                  Navigator.pushReplacementNamed(
-                    context,
-                    AppRoutes.notifications,
-                  ),
-                );
-              },
-            ),
-            ListTile(
-              leading: const Icon(Icons.gavel_outlined),
-              title: const Text('Mentions légales'),
-              onTap: () async {
-                Navigator.pop(context);
-                unawaited(
-                  Navigator.pushReplacementNamed(
-                    context,
-                    AppRoutes.legalNotices,
-                  ),
-                );
-              },
-            ),
-            const Divider(height: 1),
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: ProfileLogoutButton(onPressed: _showSignOutConfirmation),
-            ),
-          ],
-        ),
-      ),
-      appBar: AppBar(
-        title: const Text('SharePlace'),
-        leading: Builder(
-          builder: (context) => IconButton(
-            onPressed: () => Scaffold.of(context).openDrawer(),
-            icon: const Icon(Icons.person_outline),
-            tooltip: 'Menu profil',
-          ),
-        ),
-      ),
-      body: SafeArea(
-        child: FutureBuilder<_HomeData>(
-          future: _homeDataFuture,
-          builder: (context, snapshot) {
-            if (snapshot.connectionState == ConnectionState.waiting) {
-              return const Center(child: CircularProgressIndicator());
-            }
-
-            if (snapshot.hasError) {
-              return Center(
-                child: Padding(
-                  padding: const EdgeInsets.all(24),
-                  child: Text(
-                    'Impossible de charger les offres.',
-                    style: Theme.of(context).textTheme.titleMedium,
-                    textAlign: TextAlign.center,
-                  ),
-                ),
-              );
-            }
-
-            final homeData = snapshot.data;
-            final deals = homeData?.deals ?? const <Deal>[];
-
-            return Column(
-              children: [
-                _HomeSearchBar(
-                  controller: _searchController,
-                  hasActiveFilters:
-                      _postalCodeController.text.trim().isNotEmpty ||
-                      _isFoodSupplyFilter != null ||
-                      _selectedTags.isNotEmpty,
-                  onSearch: _reloadDeals,
-                  onOpenFilters: _showFilters,
-                ),
-                Expanded(
-                  child: GridView.builder(
-                    padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                          crossAxisCount: 2,
-                          crossAxisSpacing: 12,
-                          mainAxisSpacing: 12,
-                          childAspectRatio: 0.78,
-                        ),
-                    itemCount: deals.length,
-                    itemBuilder: (context, index) {
-                      final deal = deals[index];
-                      return _DealCard(
-                        deal: deal,
-                        onTap: () => _openDealDetails(
-                          deal,
-                          homeData?.currentProfileId,
-                        ),
-                      );
-                    },
-                  ),
-                ),
-              ],
             );
-          },
-        ),
+          }
+
+          final homeData = snapshot.data;
+          final deals = homeData?.deals ?? const <Deal>[];
+
+          return Column(
+            children: [
+              _HomeSearchBar(
+                controller: _searchController,
+                hasActiveFilters:
+                    _postalCodeController.text.trim().isNotEmpty ||
+                    _isFoodSupplyFilter != null ||
+                    _selectedTags.isNotEmpty,
+                onSearch: _reloadDeals,
+                onOpenFilters: _showFilters,
+              ),
+              Expanded(
+                child: GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 96),
+                  gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                    crossAxisCount: 2,
+                    crossAxisSpacing: 12,
+                    mainAxisSpacing: 12,
+                    childAspectRatio: 0.78,
+                  ),
+                  itemCount: deals.length,
+                  itemBuilder: (context, index) {
+                    final deal = deals[index];
+                    return _DealCard(
+                      deal: deal,
+                      onTap: () => _openDealDetails(
+                        deal,
+                        homeData?.currentProfileId,
+                      ),
+                    );
+                  },
+                ),
+              ),
+            ],
+          );
+        },
       ),
       floatingActionButton: FloatingActionButton(
         onPressed: _openAddDealPage,
@@ -385,52 +245,6 @@ class _HomePageState extends State<HomePage> {
     _selectedTags = result.tags;
     _reloadDeals();
   }
-
-  Future<void> _showSignOutConfirmation() {
-    return showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          title: const Text('Déconnexion'),
-          content: const Text('Confirmer la déconnexion ?'),
-          actions: [
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: Colors.black,
-                side: const BorderSide(),
-              ),
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Annuler'),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: Theme.of(context).colorScheme.error,
-                foregroundColor: Theme.of(context).colorScheme.onError,
-              ),
-              onPressed: () {
-                Navigator.of(context).pop();
-                unawaited(_signOut());
-              },
-              child: const Text('Confirmer'),
-            ),
-          ],
-        );
-      },
-    );
-  }
-
-  Future<void> _signOut() async {
-    await _authService.signOut();
-    if (!mounted) {
-      return;
-    }
-
-    unawaited(
-      Navigator.of(
-        context,
-      ).pushNamedAndRemoveUntil(AppRoutes.signIn, (_) => false),
-    );
-  }
 }
 
 class _DealCard extends StatelessWidget {
@@ -465,13 +279,21 @@ class _DealCard extends StatelessWidget {
                 ),
                 child: Stack(
                   children: [
-                    const Center(
-                      child: Icon(
-                        Icons.inventory_2_outlined,
-                        size: 44,
-                        color: Color(0xFF8D6E63),
+                    if (deal.imageUrls.isNotEmpty)
+                      Positioned.fill(
+                        child: Image.network(
+                          deal.imageUrls.first,
+                          fit: BoxFit.cover,
+                        ),
+                      )
+                    else
+                      const Center(
+                        child: Icon(
+                          Icons.inventory_2_outlined,
+                          size: 44,
+                          color: Color(0xFF8D6E63),
+                        ),
                       ),
-                    ),
                     if (deal.isFoodSupply)
                       Positioned(
                         top: 8,
@@ -513,6 +335,10 @@ class _DealCard extends StatelessWidget {
                       color: Colors.grey.shade700,
                     ),
                   ),
+                  if (deal.tags.isNotEmpty) ...[
+                    const SizedBox(height: 6),
+                    DealTagChips(tags: deal.tags, compact: true),
+                  ],
                   if (deal.maxWinnerCount > 1) ...[
                     const SizedBox(height: 2),
                     Text(

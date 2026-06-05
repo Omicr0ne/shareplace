@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shareplace/features/deals/domain/entities/deal.dart';
@@ -21,6 +23,7 @@ void main() {
           title: 'Table basse',
           description: 'Table basse en bois massif.',
           postalCode: '69001',
+          tags: const ['Maison', 'Bois'],
         ),
         Deal(
           id: 'lamp-id',
@@ -52,6 +55,8 @@ void main() {
 
     expect(dealRepository.lastFilters?.query, 'table');
     expect(find.text('Table basse'), findsOneWidget);
+    expect(find.text('Maison'), findsOneWidget);
+    expect(find.text('Bois'), findsOneWidget);
     expect(find.text('Lampe de bureau'), findsNothing);
   });
 
@@ -124,6 +129,12 @@ class _FakeDealTagRepository implements DealTagRepository {
   Future<List<String>> getAvailableTags() async => tags;
 
   @override
+  Future<String> createTag({
+    required String label,
+    required String createdByProfileId,
+  }) async => label;
+
+  @override
   Future<void> setTagsForDeal(String dealId, List<String> tags) async {}
 }
 
@@ -157,6 +168,12 @@ class _FakeDealRepository implements DealRepository {
     required String applicantProfileId,
     int quantity = 1,
   }) async {}
+
+  @override
+  Future<Deal> addImages({
+    required Deal deal,
+    required List<Uint8List> images,
+  }) async => deal;
 
   @override
   Future<void> acceptApplication(String applicationId) async {}

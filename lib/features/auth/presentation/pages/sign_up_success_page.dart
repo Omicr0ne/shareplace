@@ -81,16 +81,6 @@ class _SignUpSuccessPageState extends State<SignUpSuccessPage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: IconButton(
-                      onPressed: () => Navigator.maybePop(context),
-                      icon: const Icon(Icons.arrow_back),
-                      color: _textColor,
-                      padding: EdgeInsets.zero,
-                    ),
-                  ),
-                  const SizedBox(height: 24),
                   const Text(
                     'Votre profil',
                     textAlign: TextAlign.center,

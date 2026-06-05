@@ -5,12 +5,14 @@ import 'package:flutter/material.dart';
 class DealImageCarousel extends StatefulWidget {
   const DealImageCarousel({
     required this.dealTitle,
-    required this.images,
+    this.images = const [],
+    this.imageUrls = const [],
     super.key,
   });
 
   final String dealTitle;
   final List<Uint8List> images;
+  final List<String> imageUrls;
 
   static const int maxImages = 5;
 
@@ -61,7 +63,11 @@ class _DealImageCarouselState extends State<DealImageCarousel> {
     final displayImages = widget.images
         .take(DealImageCarousel.maxImages)
         .toList();
-    final hasImages = displayImages.isNotEmpty;
+    final displayImageUrls = widget.imageUrls
+        .take(DealImageCarousel.maxImages - displayImages.length)
+        .toList();
+    final totalImages = displayImages.length + displayImageUrls.length;
+    final hasImages = totalImages > 0;
 
     return Column(
       children: [
@@ -86,16 +92,23 @@ class _DealImageCarouselState extends State<DealImageCarousel> {
                   _currentIndex = index;
                 });
               },
-              itemCount: hasImages
-                  ? displayImages.length
-                  : _placeholderSlides.length,
+              itemCount: hasImages ? totalImages : _placeholderSlides.length,
               itemBuilder: (context, index) {
-                if (hasImages) {
+                if (index < displayImages.length) {
                   return _CarouselImageView(
                     imageBytes: displayImages[index],
                     dealTitle: widget.dealTitle,
                     position: index + 1,
-                    total: displayImages.length,
+                    total: totalImages,
+                  );
+                }
+
+                if (hasImages) {
+                  return _CarouselImageView(
+                    imageUrl: displayImageUrls[index - displayImages.length],
+                    dealTitle: widget.dealTitle,
+                    position: index + 1,
+                    total: totalImages,
                   );
                 }
 
@@ -114,7 +127,7 @@ class _DealImageCarouselState extends State<DealImageCarousel> {
         Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: List.generate(
-            hasImages ? displayImages.length : _placeholderSlides.length,
+            hasImages ? totalImages : _placeholderSlides.length,
             (index) {
               final selected = index == _currentIndex;
               return AnimatedContainer(
@@ -225,13 +238,15 @@ class _CarouselSlideView extends StatelessWidget {
 
 class _CarouselImageView extends StatelessWidget {
   const _CarouselImageView({
-    required this.imageBytes,
     required this.dealTitle,
     required this.position,
     required this.total,
+    this.imageBytes,
+    this.imageUrl,
   });
 
-  final Uint8List imageBytes;
+  final Uint8List? imageBytes;
+  final String? imageUrl;
   final String dealTitle;
   final int position;
   final int total;
@@ -241,10 +256,27 @@ class _CarouselImageView extends StatelessWidget {
     return Stack(
       children: [
         Positioned.fill(
-          child: Image.memory(
-            imageBytes,
-            fit: BoxFit.cover,
-          ),
+          child: imageBytes != null
+              ? Image.memory(
+                  imageBytes!,
+                  fit: BoxFit.cover,
+                )
+              : Image.network(
+                  imageUrl!,
+                  fit: BoxFit.cover,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const ColoredBox(
+                      color: Color(0xFFFFE0B2),
+                      child: Center(
+                        child: Icon(
+                          Icons.broken_image_outlined,
+                          size: 48,
+                          color: Color(0xFF8D6E63),
+                        ),
+                      ),
+                    );
+                  },
+                ),
         ),
         Positioned.fill(
           child: DecoratedBox(

@@ -1,3 +1,4 @@
+import 'package:shareplace/features/deals/domain/entities/deal_tag.dart';
 import 'package:shareplace/features/deals/domain/repositories/deal_tag_repository.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -31,6 +32,41 @@ class SupabaseDealTagRepository implements DealTagRepository {
     return response
         .map((row) => row['label']! as String)
         .toList(growable: false);
+  }
+
+  @override
+  Future<String> createTag({
+    required String label,
+    required String createdByProfileId,
+  }) async {
+    final normalizedLabel = label.trim();
+    if (normalizedLabel.isEmpty) {
+      throw ArgumentError.value(label, 'label', 'Must not be empty.');
+    }
+
+    final client = _requireClient();
+    final existingTag = await client
+        .from('tags')
+        .select('label')
+        .eq('normalized_label', DealTag.normalizeLabel(normalizedLabel))
+        .eq('state', 'approved')
+        .maybeSingle();
+    if (existingTag != null) {
+      return existingTag['label']! as String;
+    }
+
+    final createdTag = await client
+        .from('tags')
+        .insert({
+          'label': normalizedLabel,
+          'normalized_label': DealTag.normalizeLabel(normalizedLabel),
+          'created_by_profile_id': createdByProfileId,
+          'state': 'approved',
+        })
+        .select('label')
+        .single();
+
+    return createdTag['label']! as String;
   }
 
   @override
