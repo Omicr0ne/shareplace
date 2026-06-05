@@ -4,15 +4,19 @@ class ProfileIdentityFields extends StatelessWidget {
   const ProfileIdentityFields({
     required this.firstName,
     required this.lastName,
+    required this.phone,
     required this.onFirstNameChanged,
     required this.onLastNameChanged,
+    required this.onPhoneChanged,
     super.key,
   });
 
   final String firstName;
   final String lastName;
+  final String? phone;
   final ValueChanged<String> onFirstNameChanged;
   final ValueChanged<String> onLastNameChanged;
+  final ValueChanged<String> onPhoneChanged;
 
   @override
   Widget build(BuildContext context) {
@@ -61,6 +65,19 @@ class ProfileIdentityFields extends StatelessWidget {
             }
 
             return null;
+          },
+        ),
+        const SizedBox(height: 16),
+        TextFormField(
+          key: const Key('profile-phone-field'),
+          initialValue: phone,
+          keyboardType: TextInputType.phone,
+          decoration: const InputDecoration(
+            border: OutlineInputBorder(),
+            labelText: 'Téléphone',
+          ),
+          onChanged: (value) {
+            onPhoneChanged(value.trim());
           },
         ),
       ],

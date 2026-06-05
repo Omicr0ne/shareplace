@@ -27,7 +27,42 @@ void main() {
     );
     expect(find.byKey(const Key('profile-first-name-field')), findsOneWidget);
     expect(find.byKey(const Key('profile-last-name-field')), findsOneWidget);
+    expect(find.byKey(const Key('profile-phone-field')), findsOneWidget);
     expect(find.byKey(const Key('profile-description-field')), findsOneWidget);
+
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('profile-save-button')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    expect(find.byKey(const Key('profile-save-button')), findsOneWidget);
+  });
+
+  testWidgets('saves profile updates including phone number', (tester) async {
+    final repository = _FakeProfileRepository(profile: testProfile);
+    await tester.pumpWidget(
+      MaterialApp(
+        home: ProfilePage(
+          initialProfile: testProfile,
+          profileRepository: repository,
+        ),
+      ),
+    );
+
+    await tester.enterText(
+      find.byKey(const Key('profile-phone-field')),
+      '0601020304',
+    );
+    await tester.scrollUntilVisible(
+      find.byKey(const Key('profile-save-button')),
+      240,
+      scrollable: find.byType(Scrollable).first,
+    );
+    await tester.tap(find.byKey(const Key('profile-save-button')));
+    await tester.pumpAndSettle();
+
+    expect(repository.lastUpdatedProfile?.phone, '0601020304');
+    expect(find.text('Profil sauvegardé.'), findsOneWidget);
   });
 
   testWidgets('opens profile picture actions when avatar is tapped', (
@@ -174,7 +209,7 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      const MaterialApp(
+      MaterialApp(
         home: ProfilePage(
           profileRepository: _FakeProfileRepository(profile: testProfile),
         ),
@@ -200,9 +235,10 @@ Future<void> _tapLogoutButton(WidgetTester tester) async {
 }
 
 class _FakeProfileRepository implements ProfileRepository {
-  const _FakeProfileRepository({this.profile});
+  _FakeProfileRepository({this.profile});
 
   final Profile? profile;
+  Profile? lastUpdatedProfile;
 
   @override
   Future<Profile> create(Profile profile) async => profile;
@@ -217,7 +253,10 @@ class _FakeProfileRepository implements ProfileRepository {
   Future<Profile?> getCurrentProfile() async => profile;
 
   @override
-  Future<Profile> update(Profile profile) async => profile;
+  Future<Profile> update(Profile profile) async {
+    lastUpdatedProfile = profile;
+    return profile;
+  }
 }
 
 class _ThrowingProfileRepository implements ProfileRepository {

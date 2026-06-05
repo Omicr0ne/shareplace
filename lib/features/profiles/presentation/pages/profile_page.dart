@@ -35,6 +35,7 @@ class _ProfilePageState extends State<ProfilePage> {
 
   Profile? _profile;
   Uint8List? _selectedImageBytes;
+  bool _isSaving = false;
   final _authService = AuthService();
   late final ProfileRepository _profileRepository;
 
@@ -90,13 +91,27 @@ class _ProfilePageState extends State<ProfilePage> {
               ProfileIdentityFields(
                 firstName: profile.firstName,
                 lastName: profile.lastName,
+                phone: profile.phone,
                 onFirstNameChanged: _updateFirstName,
                 onLastNameChanged: _updateLastName,
+                onPhoneChanged: _updatePhone,
               ),
               const SizedBox(height: 24),
               ProfileDescriptionField(
                 initialDescription: profile.description,
                 onChanged: _updateDescription,
+              ),
+              const SizedBox(height: 24),
+              FilledButton(
+                key: const Key('profile-save-button'),
+                onPressed: _isSaving ? null : _saveProfile,
+                child: _isSaving
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Text('Sauvegarder'),
               ),
               const SizedBox(height: 24),
               ProfileLogoutButton(onPressed: _showSignOutConfirmation),
@@ -170,6 +185,58 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _updateLastName(String lastName) {
     _profile = _profile?.copyWith(lastName: lastName);
+  }
+
+  void _updatePhone(String phone) {
+    _profile = _profile?.copyWith(phone: phone.isEmpty ? null : phone);
+  }
+
+  Future<void> _saveProfile() async {
+    final profile = _profile;
+    if (profile == null) {
+      return;
+    }
+
+    if (profile.firstName.trim().isEmpty || profile.lastName.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Le prénom et le nom sont obligatoires.'),
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _isSaving = true;
+    });
+
+    try {
+      final updatedProfile = await _profileRepository.update(profile);
+      if (!mounted) {
+        return;
+      }
+      setState(() {
+        _profile = updatedProfile;
+      });
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Profil sauvegardé.')),
+      );
+    } on Object {
+      if (!mounted) {
+        return;
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Erreur lors de la sauvegarde du profil.'),
+        ),
+      );
+    } finally {
+      if (mounted) {
+        setState(() {
+          _isSaving = false;
+        });
+      }
+    }
   }
 
   void _goProfileVerification() {

@@ -45,8 +45,8 @@ Future<void> main(List<String> arguments) async {
 Future<void> _seed(SupabaseClient client) async {
   stdout.writeln('Seeding Supabase...');
 
-  await client.from('tags').upsert(_seedTags, onConflict: 'id');
   await client.from('profiles').upsert(_seedProfiles, onConflict: 'id');
+  await client.from('tags').upsert(_seedTags, onConflict: 'id');
   await client.from('deals').upsert(_seedDeals, onConflict: 'id');
   await client
       .from('deal_tags')
@@ -74,6 +74,7 @@ Future<void> _reset(SupabaseClient client) async {
       .inFilter('id', _seedApplicationIds);
   await client.from('deal_images').delete().inFilter('deal_id', _seedDealIds);
   await client.from('deal_tags').delete().inFilter('deal_id', _seedDealIds);
+  await client.from('tags').delete().inFilter('id', _seedTagIds);
   await client
       .from('profiles')
       .update({'profile_picture_url': null})
@@ -416,30 +417,35 @@ const _seedTags = <Map<String, Object?>>[
     'label': 'Maison',
     'normalized_label': 'maison',
     'state': 'approved',
+    'created_by_profile_id': '11111111-1111-1111-1111-111111111111',
   },
   {
     'id': 'eeeeeee2-eeee-eeee-eeee-eeeeeeeeeee2',
     'label': 'Déco',
     'normalized_label': 'deco',
     'state': 'approved',
+    'created_by_profile_id': '11111111-1111-1111-1111-111111111111',
   },
   {
     'id': 'eeeeeee3-eeee-eeee-eeee-eeeeeeeeeee3',
     'label': 'Cuisine',
     'normalized_label': 'cuisine',
     'state': 'approved',
+    'created_by_profile_id': '11111111-1111-1111-1111-111111111111',
   },
   {
     'id': 'eeeeeee4-eeee-eeee-eeee-eeeeeeeeeee4',
     'label': 'Jardin',
     'normalized_label': 'jardin',
     'state': 'approved',
+    'created_by_profile_id': '11111111-1111-1111-1111-111111111111',
   },
   {
     'id': 'eeeeeee5-eeee-eeee-eeee-eeeeeeeeeee5',
     'label': 'Alimentaire',
     'normalized_label': 'alimentaire',
     'state': 'approved',
+    'created_by_profile_id': '11111111-1111-1111-1111-111111111111',
   },
 ];
 
@@ -497,6 +503,14 @@ const _seedProfileIds = <String>[
 const _seedDealIds = <String>[
   'aaaaaaa1-aaaa-aaaa-aaaa-aaaaaaaaaaa1',
   'aaaaaaa2-aaaa-aaaa-aaaa-aaaaaaaaaaa2',
+];
+
+const _seedTagIds = <String>[
+  'eeeeeee1-eeee-eeee-eeee-eeeeeeeeeee1',
+  'eeeeeee2-eeee-eeee-eeee-eeeeeeeeeee2',
+  'eeeeeee3-eeee-eeee-eeee-eeeeeeeeeee3',
+  'eeeeeee4-eeee-eeee-eeee-eeeeeeeeeee4',
+  'eeeeeee5-eeee-eeee-eeee-eeeeeeeeeee5',
 ];
 
 const _seedApplicationIds = <String>[

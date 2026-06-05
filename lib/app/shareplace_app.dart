@@ -35,12 +35,12 @@ class SharePlaceApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      initialRoute: AppRoutes.welcome,
+      initialRoute: AppRoutes.deals,
       onGenerateRoute: (settings) {
         if (!_isPublicRoute(settings.name) && !_hasAuthenticatedSession()) {
           return MaterialPageRoute<void>(
             settings: settings,
-            builder: (_) => const SignInPage(),
+            builder: (_) => const WelcomePage(),
           );
         }
 
