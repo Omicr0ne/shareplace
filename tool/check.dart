@@ -6,11 +6,6 @@ Future<void> main(List<String> arguments) async {
 
   if (!quick) {
     await _run('flutter', ['pub', 'get']);
-    await _run('dart', [
-      'run',
-      'build_runner',
-      'build',
-    ]);
   }
 
   if (pathsToFormat.isNotEmpty) {

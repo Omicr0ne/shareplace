@@ -16,6 +16,15 @@ Après avoir cloné le projet :
 flutter pub get
 ```
 
+Créer ensuite un fichier `.env` à la racine du projet à partir de `.env.example` :
+
+```env
+SUPABASE_URL=https://votre-projet.supabase.co
+SUPABASE_ANON_KEY=votre-cle-anon
+```
+
+L'application charge ce fichier au démarrage avec `flutter_dotenv` pour initialiser Supabase.
+
 Pour vérifier que l'environnement Flutter est correct :
 
 ```bash
@@ -46,6 +55,34 @@ dart run tool/check.dart --quick
 ```
 
 Cette variante lance seulement le formatage et l'analyse statique.
+
+## Seeder Supabase
+
+Un script de seed est disponible pour charger un jeu de données de dev dans Supabase, et le retirer ensuite.
+
+Commandes :
+
+```bash
+dart run tool/seed/supabase_seed.dart seed
+```
+
+```bash
+dart run tool/seed/supabase_seed.dart reset
+```
+
+`reset` vide les tables `reports`, `deal_applications`, `deal_tags`, `deals` et `profiles`.
+
+Par défaut, le script lit `.env`. Vous pouvez préciser un autre fichier :
+
+```bash
+dart run tool/seed/supabase_seed.dart seed --env=.env.local
+```
+
+Variables nécessaires dans le fichier d'environnement :
+
+- `SUPABASE_URL`
+- `SUPABASE_SERVICE_ROLE_KEY` (recommandé)
+- ou `SUPABASE_ANON_KEY` (fallback, peut échouer selon vos policies RLS)
 
 ## GitHub CI Obligatoire
 
